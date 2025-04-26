@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Web Code Editor</title>
+    <link rel="stylesheet" href="..\src\styles\styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Montserrat:wght@500&family=Iosevka&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="loading-container">
+        <div class="throbber"></div>
+        <p>Connecting to server...</p>
+    </div>
+
+    <!-- Error Message Container -->
+    <div id="error-message" class="hidden">
+        <p>Unable to connect to the server. Please check your connection.</p>
+        <button id="try-again-button">Try Again</button>
+    </div>
+	
+	<button id="menu-btn" class="menu-button">
+    <i class="fas fa-bars"></i>
+	</button>
+	
+	<div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
+	<!-- Add this sidebar after the header -->
+	<div id="sidebar" class="sidebar">
+		<div class="sidebar-header">
+			<h3><i class="fas fa-folder"></i> Files</h3>
+			<button id="close-sidebar-btn">
+				<i class="fas fa-times"></i>
+			</button>
+		</div>
+		<div class="sidebar-content">
+			<!-- Content will be added later -->
+		</div>
+	</div>
+	
+    <header>
+        <div class="title-container">
+            <h1>Codebox</h1>
+            <h2>Web Code Editor</h2>
+        </div>
+        <div class="controls">
+            <div class="font-controls">
+                <button id="decrease-font"><span class="font-icon">A</span><i class="fas fa-minus"></i></button>
+                <button id="increase-font"><span class="font-icon">A</span><i class="fas fa-plus"></i></button>
+            </div>
+            <button id="run-btn"><i class="fas fa-play"></i> Run</button>
+            <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
+        </div>
+		<button id="auth-btn" class="auth-button">
+    <i class="fas fa-user"></i> Login / Register
+</button>
+
+		<div id="auth-modal" class="modal hidden">
+			<div class="modal-content">
+				<h3><i class="fas fa-user-circle"></i> Login</h3>
+				<form id="auth-form">
+					<div class="form-group">
+						<label for="email">Email:</label>
+						<input type="email" id="email" required>
+					</div>
+					<div class="form-group">
+						<label for="password">Password:</label>
+						<input type="password" id="password" required>
+					</div>
+					<div class="buttons-container">
+						<button type="submit" class="login-btn">Login</button>
+						<button type="button" class="register-btn">Register</button>
+					</div>
+				</form>
+			</div>
+		</div>
+    </header>
+    <div class="editor-container">
+        <div class="code-editor">
+            <div id="line-numbers"></div>
+            <textarea id="gravity-code" placeholder="Write your Python code here..."></textarea>
+            <button id="exit-fullscreen-btn" class="hidden"><i class="fas fa-compress"></i> Exit Full Screen</button>
+        </div>
+        <div class="output-container">
+            <h3>Output</h3>
+            <iframe id="output"></iframe>
+        </div>
+    </div>
+    <script src="..\src\script.js"></script>
+</body>
+</html>
