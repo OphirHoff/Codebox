@@ -1,10 +1,12 @@
 ### Client --> Server ###
 CODE_REGISTER = 'REGI'
 CODE_LOGIN = 'LOGN'
+CODE_RUN_SCRIPT = 'EXEC'
 
 ### Server --> Client ###
 CODE_REGISTER_SUCCESS = 'REGR'
 CODE_LOGIN_SUCCESS = 'LOGR'
+CODE_OUTPUT = 'OUTP'
 CODE_ERROR = 'ERRR'
 
 ### Error Codes ###

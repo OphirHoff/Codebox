@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 1300);
 
     // WebSocket connection
-    const socket = new WebSocket('ws://localhost:8765'); // Replace with your WebSocket server URL
+    const socket = new WebSocket('ws://127.0.0.1:8765'); // Replace with your WebSocket server URL
 
     // Handle WebSocket connection open
     socket.addEventListener('open', () => {
@@ -38,39 +38,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (errorMessage) errorMessage.classList.add('hidden'); // Hide error if connection succeeds
         clearTimeout(connectionTimeout); // Clear failure detection timeout
     });
-
-    // Handle WebSocket messages (server responses)
-    socket.addEventListener('message', (event) => {
-		
-		msg = event.data;
-		console.log(`Received: ${msg}`);
-		
-		fields = msg.split('~');
-		response_code = fields[0];
-		data = fields.slice(1);
-		
-		if (response_code == 'REGR') {
-			alert('Registered successfuly!');
-			clearEmailPw();
-		}
-		else if (response_code == 'LOGR') {
-			alert(`Logged in. Welcome! (${emailInput.value})`);
-			clearEmailPw();
-		}
-		else if (response_code == 'ERRR') {
-			clearEmailPw();
-			errorCode = data[0];
-			alert(`Error: ${errors[errorCode]}`);
-		}
-		
-    });
 	
-	let errors = {
-		"001": "General Error",
-		"102": "User already exists"
-	};
-
-    // Handle WebSocket errors
+	// Handle WebSocket errors
     socket.addEventListener('error', () => {
         console.error('WebSocket error occurred');
         showError();
@@ -99,12 +68,48 @@ document.addEventListener('DOMContentLoaded', function () {
             console.warn('WebSocket connection failed (timeout)');
             showError();
         }
-    }, 1300); // Wait 3 seconds before assuming failure
+    }, 2000); // Wait 3 seconds before assuming failure
 
     // Try Again button click event
     tryAgainButton.addEventListener('click', () => {
         window.location.reload(); // Refresh the page
     });
+
+    // Handle WebSocket messages (server responses)
+    socket.addEventListener('message', (event) => {
+		
+		msg = event.data;
+		console.log(`Received: ${msg}`);
+		
+		fields = msg.split('~');
+		response_code = fields[0];
+		data = fields.slice(1);
+		
+		if (response_code == 'REGR') {
+			alert('Registered successfuly!');
+			clearEmailPw();
+		}
+		else if (response_code == 'LOGR') {
+			alert(`Logged in. Welcome! (${emailInput.value})`);
+			clearEmailPw();
+		}
+		else if (response_code == 'OUTP') {
+			let runOutputData = JSON.parse(data[0]);
+			runOutput = runOutputData['output'];
+			updateOutput(runOutput);
+		}
+		else if (response_code == 'ERRR') {
+			clearEmailPw();
+			errorCode = data[0];
+			alert(`Error: ${errors[errorCode]}`);
+		}
+		
+    });
+	
+	let errors = {
+		"001": "General Error",
+		"102": "User already exists"
+	};
 
     // Function to send code to the server
     function sendCodeToServer() {
@@ -113,12 +118,68 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Please write some code before running.');
             return;
         }
-        socket.send(JSON.stringify({ code }));
+		
+		// Clear output window content
+		clearOutput();
+		
+		const toSend = `EXEC~${JSON.stringify({ code })}`
+        socket.send(toSend);
     }
 
     // Run button click event
     runBtn.addEventListener('click', sendCodeToServer);
+	
+	// Initialize output window
+	output.srcdoc = `
+        <html>
+            <head>
+                <style>
+                    body {
+                        background-color: #1e1e1e;
+                        color: #e0e0e0;
+                        font-family: 'Iosevka', 'Consolas', 'Courier New', monospace;
+                        font-size: 16px;
+                        margin: 0;
+                        padding: 15px;
+                    }
+                    pre {
+                        margin: 0;
+                        white-space: pre-wrap;
+                    }
+                </style>
+            </head>
+            <body class="iframe-styles">
+                <pre id="pre-text"></pre>
+            </body>
+        </html>
+    `;
+    
+    // Wait for iframe to load
+    output.onload = function() {
+        // Now it's ready for updates
+        console.log("Output iframe initialized");
+    };
 
+	// Function to append text to output
+	function updateOutput(outputText) {
+		if (output.contentDocument) {
+			const preElement = output.contentDocument.getElementById("pre-text");
+			if (preElement) {
+				preElement.textContent += outputText;
+			}
+		}
+	}
+	
+	// Function to clear the output window
+	function clearOutput() {
+		if (output.contentDocument) {
+			const preElement = output.contentDocument.getElementById("pre-text");
+			if (preElement) {
+				preElement.textContent = ""; // Clear the content
+			}
+		}
+	}
+	
     // Font size controls
     let fontSize = 18;
     const minFontSize = 12;
@@ -159,6 +220,54 @@ document.addEventListener('DOMContentLoaded', function () {
         const lines = codeInput.value.split('\n').length;
         lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
     }
+	
+	 // Handle tab key for indentation
+    codeInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab') {
+            e.preventDefault(); // Prevent focus moving to next element
+            
+            // Get cursor position
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            
+            // Insert 4 spaces at cursor position
+            this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+            
+            // Move cursor after the inserted tab
+            this.selectionStart = this.selectionEnd = start + 4;
+            
+            // Update line numbers
+            updateLineNumbers();
+        }
+    });
+    
+    // Auto-indent on new line (Enter key)
+    codeInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            
+            // Get current line's indentation
+            const currentLine = this.value.substring(0, start).split('\n').pop();
+            const match = currentLine.match(/^(\s+)/);
+            const indent = match ? match[1] : '';
+            
+            // Check if line ends with a colon (Python blocks)
+            const endsWithColon = currentLine.trim().endsWith(':');
+            const newIndent = endsWithColon ? indent + '    ' : indent;
+            
+            // Insert new line with proper indentation
+            this.value = this.value.substring(0, start) + '\n' + newIndent + this.value.substring(end);
+            
+            // Move cursor after indentation on new line
+            this.selectionStart = this.selectionEnd = start + 1 + newIndent.length;
+            
+            // Update line numbers
+            updateLineNumbers();
+        }
+    });
 
     // Throttle the updateLineNumbers function
     let isThrottled = false;
