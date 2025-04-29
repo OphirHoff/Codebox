@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		else if (response_code == 'LOGR') {
 			alert(`Logged in. Welcome! (${emailInput.value})`);
+			displayUserEmail(emailInput.value);
+			enableFilesMenu();
 			clearEmailPw();
 		}
 		else if (response_code == 'OUTP') {
@@ -287,6 +289,35 @@ document.addEventListener('DOMContentLoaded', function () {
 		emailInput.value = '';
 		passwordInput.value = '';
 	}
+	
+	// Function to replace login button with user email display
+    function displayUserEmail(email) {
+        const authBtn = document.getElementById('auth-btn');
+        if (!authBtn) return;
+        
+        // Get current dimensions and position of the auth button
+        const authBtnRect = authBtn.getBoundingClientRect();
+        const minWidth = authBtnRect.width;
+        const height = authBtnRect.height;
+        
+        // Create user email display element
+        const userEmailDisplay = document.createElement('div');
+        userEmailDisplay.id = 'user-email-display';
+        userEmailDisplay.className = 'user-email-display';
+        
+        // Don't set fixed width - let it expand naturally
+        userEmailDisplay.style.minWidth = `${minWidth}px`;
+        userEmailDisplay.style.height = `${height}px`;
+        userEmailDisplay.style.maxWidth = '300px'; // Set a maximum width to prevent excessive stretching
+        
+        // Add email text with user icon
+        userEmailDisplay.innerHTML = `<i class="fas fa-user"></i> ${email}`;
+        
+        // Replace the auth button with our new element
+        authBtn.parentNode.replaceChild(userEmailDisplay, authBtn);
+        
+        console.log(`Replaced login button with email: ${email}`);
+    }
 
     // Initial update
     updateLineNumbers();
@@ -354,6 +385,14 @@ document.addEventListener('DOMContentLoaded', function () {
 			alert('Unable to register: Server connection not available');
 		}
     });
+	
+	// Function to enable the menu button
+    function enableFilesMenu() {
+        if (menuBtn) {
+            menuBtn.removeAttribute('disabled');
+            console.log('Files menu button enabled');
+        }
+    }
 	
 	// Open sidebar when menu button is clicked
 	menuBtn.addEventListener('click', () => {
