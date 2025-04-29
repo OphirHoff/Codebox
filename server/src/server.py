@@ -36,8 +36,6 @@ class Server:
     async def run_script(self, data):
 
         code = (json.loads(data))['code']
-        print('check:', code)
-        
         
         with open('script.py', 'w') as file:
             file.write(code)
@@ -52,8 +50,7 @@ class Server:
             print(line.decode())
             await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
         
-        process.stdout.close()
-        process.wait()
+        await process.wait()
 
     def server_create_response(self, request, data):
 
