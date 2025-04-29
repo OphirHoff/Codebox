@@ -26,18 +26,28 @@
 	
 	<div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
 
-	<!-- Add this sidebar after the header -->
 	<div id="sidebar" class="sidebar">
-		<div class="sidebar-header">
-			<h3><i class="fas fa-folder"></i> Files</h3>
-			<button id="close-sidebar-btn">
-				<i class="fas fa-times"></i>
-			</button>
-		</div>
-		<div class="sidebar-content">
-			<!-- Content will be added later -->
-		</div>
-	</div>
+    <div class="sidebar-header">
+        <h3><i class="fas fa-folder"></i> Files</h3>
+        <button id="close-sidebar-btn">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="sidebar-content">
+        <div class="file-tree">
+            <div class="folder-item root-folder">
+                <div class="folder-header">
+                    <i class="fas fa-folder"></i>
+                    <span class="folder-name">your_files</span>
+                    <i class="fas fa-chevron-down folder-toggle"></i>
+                </div>
+                <div class="folder-contents">
+                    <!-- Folder contents will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 	
     <header>
         <div class="title-container">

@@ -681,3 +681,197 @@ pre {
 .sidebar-overlay.hidden {
     display: none;
 }
+
+.sidebar-content {
+    padding: 20px;
+    color: #e0e0e0;
+}
+
+/* File Tree Styles */
+.file-tree {
+    font-family: 'Poppins', sans-serif;
+    user-select: none;
+}
+
+.folder-item {
+    margin-bottom: 8px;
+}
+
+.root-folder > .folder-header {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.folder-header:hover {
+    background-color: #333;
+}
+
+.folder-name {
+    margin-left: 10px;
+    flex-grow: 1;
+}
+
+.folder-toggle {
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.folder-header .fa-folder {
+    color: #4CAF50;
+}
+
+.folder-header.collapsed .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+
+.folder-contents {
+    padding-left: 20px;
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+.folder-contents.hidden {
+    display: none;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.file-item:hover {
+    background-color: #333;
+}
+
+.file-item.active {
+    background-color: #2d4133;
+    border-left: 3px solid #4CAF50;
+}
+
+.file-name {
+    margin-left: 10px;
+}
+
+.file-item .fa-file-code {
+    color: #2196F3;
+}
+
+.file-item .fa-file-alt {
+    color: #9E9E9E;
+}
+
+.file-item .fa-file-image {
+    color: #FF9800;
+}
+
+.file-item .fa-file-pdf {
+    color: #F44336;
+}
+
+.file-item .fa-file-word {
+    color: #2196F3;
+}
+
+.file-item .fa-file-excel {
+    color: #4CAF50;
+}
+
+/* File tree styles */
+.file-tree {
+    margin: 10px 0;
+}
+
+.file-item {
+    margin-bottom: 6px;
+}
+
+.file-item-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.file-item-header:hover {
+    background-color: #3a3a3a;
+}
+
+.file-item-header i {
+    margin-right: 12px;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.file-item-header span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Folder-specific styles */
+.folder > .file-item-header > i {
+    color: #e6c07b;
+}
+
+.folder > .file-item-header {
+    font-weight: 500;
+}
+
+/* File-specific styles */
+.file > .file-item-header {
+    padding-left: 12px;
+}
+
+/* Nested files */
+.folder-children {
+    margin-left: 20px;
+    height: auto;
+    max-height: 1000px; /* Something very large */
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+/* Collapsed state */
+.folder.collapsed > .folder-children {
+    max-height: 0;
+}
+
+/* File type icons */
+.html-icon { color: #e44d26; }
+.css-icon { color: #264de4; }
+.js-icon { color: #f7df1e; }
+.py-icon { color: #3572A5; }
+.json-icon { color: #5498D7; }
+.fa-file-csv { color: #217346; }
+.fa-file-alt { color: #c2c2c2; }
+
+/* Animation for folder icon */
+.fas {
+    transition: color 0.3s ease;
+}
+
+/* Folder open/close animation */
+.folder-children {
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+.folder.collapsed > .folder-children {
+    opacity: 0;
+}

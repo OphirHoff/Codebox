@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	let errors = {
 		"001": "General Error",
+		"101": "Login Failed",
 		"102": "User already exists"
 	};
 
@@ -373,4 +374,185 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Close sidebar when clicking outside
 	sidebarOverlay.addEventListener('click', closeSidebar);
+	
+	// Initial setup of existing DOM elements
+    setupFolderToggling();
+	
+	// Function to add event listeners to folder headers
+    function setupFolderToggling() {
+        // Get all folder headers
+        const folderHeaders = document.querySelectorAll('.folder-header');
+        
+        // Add click event to each folder header
+        folderHeaders.forEach(header => {
+            // Remove any existing listeners first to prevent duplicates
+            const newHeader = header.cloneNode(true);
+            header.parentNode.replaceChild(newHeader, header);
+            
+            newHeader.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                
+                // Toggle collapsed state
+                this.classList.toggle('collapsed');
+                
+                // Find the corresponding folder contents
+                const folderContents = this.parentNode.querySelector('.folder-contents');
+                if (folderContents) {
+                    folderContents.classList.toggle('hidden');
+                }
+                
+                // Change folder icon
+                const folderIcon = this.querySelector('.fa-folder, .fa-folder-open');
+                if (folderIcon) {
+                    if (this.classList.contains('collapsed')) {
+                        folderIcon.className = 'fas fa-folder';
+                    } else {
+                        folderIcon.className = 'fas fa-folder-open';
+                    }
+                }
+                
+                // Change chevron direction
+                const chevron = this.querySelector('.folder-toggle');
+                if (chevron) {
+                    chevron.style.transform = this.classList.contains('collapsed') ? 
+                        'rotate(-90deg)' : 'rotate(0deg)';
+                }
+            });
+        });
+    }
+
+    // Function to create a dynamic file tree from the fileStructure array
+    function populateFileTree() {
+        const rootContents = document.querySelector('.root-folder > .folder-contents');
+        if (!rootContents) return;
+        
+        // Clear existing content
+        rootContents.innerHTML = '';
+        
+        // Add file structure
+        fileStructure.forEach(item => {
+            if (item.type === 'folder') {
+                const folderItem = createFolderItem(item);
+                rootContents.appendChild(folderItem);
+            } else {
+                const fileItem = createFileItem(item);
+                rootContents.appendChild(fileItem);
+            }
+        });
+        
+        // Setup folder toggling for newly created elements
+        setupFolderToggling();
+    }
+    
+    // Function to create a folder item
+    function createFolderItem(folder) {
+        const folderItem = document.createElement('div');
+        folderItem.className = 'folder-item';
+        
+        const folderHeader = document.createElement('div');
+        folderHeader.className = 'folder-header collapsed';
+        
+        const folderIcon = document.createElement('i');
+        folderIcon.className = 'fas fa-folder';
+        
+        const folderName = document.createElement('span');
+        folderName.className = 'folder-name';
+        folderName.textContent = folder.name;
+        
+        const folderToggle = document.createElement('i');
+        folderToggle.className = 'fas fa-chevron-down folder-toggle';
+        folderToggle.style.transform = 'rotate(-90deg)';
+        
+        folderHeader.appendChild(folderIcon);
+        folderHeader.appendChild(folderName);
+        folderHeader.appendChild(folderToggle);
+        
+        const folderContents = document.createElement('div');
+        folderContents.className = 'folder-contents hidden';
+        
+        // Add children if they exist
+        if (folder.children && folder.children.length > 0) {
+            folder.children.forEach(child => {
+                if (child.type === 'folder') {
+                    folderContents.appendChild(createFolderItem(child));
+                } else {
+                    folderContents.appendChild(createFileItem(child));
+                }
+            });
+        }
+        
+        folderItem.appendChild(folderHeader);
+        folderItem.appendChild(folderContents);
+        
+        return folderItem;
+    }
+    
+    // Function to create a file item
+    function createFileItem(file) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        const fileIcon = document.createElement('i');
+        fileIcon.className = getFileIcon(file.extension);
+        
+        const fileName = document.createElement('span');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        
+        fileItem.appendChild(fileIcon);
+        fileItem.appendChild(fileName);
+        
+        return fileItem;
+    }
+    
+    // Get file icon based on extension
+    function getFileIcon(extension) {
+        switch(extension) {
+            case 'html': return 'fas fa-file-code html-icon';
+            case 'css': return 'fas fa-file-code css-icon';
+            case 'js': return 'fas fa-file-code js-icon';
+            case 'py': return 'fas fa-file-code py-icon';
+            case 'json': return 'fas fa-file-code json-icon';
+            case 'csv': return 'fas fa-file-csv';
+            case 'txt': return 'fas fa-file-alt';
+            default: return 'fas fa-file';
+        }
+    }
+    
+    // Add event listener to menu button to also repopulate the file tree
+    if (menuBtn) {
+        menuBtn.addEventListener('click', function() {
+            // Populate the sidebar with files
+            populateFileTree();
+        });
+    }
+	
+	// Sample file structure (in a real app, this would come from the server)
+	const fileStructure = [
+		{
+			type: 'folder',
+			name: 'Project 1',
+			children: [
+				{ type: 'file', name: 'index.html', extension: 'html' },
+				{ type: 'file', name: 'styles.css', extension: 'css' },
+				{ type: 'file', name: 'script.js', extension: 'js' }
+			]
+		},
+		{
+			type: 'folder',
+			name: 'Project 2',
+			children: [
+				{ type: 'file', name: 'main.py', extension: 'py' },
+				{ 
+					type: 'folder', 
+					name: 'data',
+					children: [
+						{ type: 'file', name: 'data.csv', extension: 'csv' },
+						{ type: 'file', name: 'config.json', extension: 'json' }
+					]
+				}
+			]
+		},
+		{ type: 'file', name: 'notes.txt', extension: 'txt' }
+	];
 });
