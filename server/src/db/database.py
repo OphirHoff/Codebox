@@ -1,14 +1,12 @@
 import sqlite3
-import pickle, hashlib, bcrypt, os
+import pickle
+import os
+from utils import security
 import db.queries as queries
 import datetime
-import sys
-
-sys.path.append('../')  # Allow use of 'error.py' module
 import errors
 
 DB_FILE = "../data/users.sqlite"
-PEPPER = b'#K@(JJJFCS5D'  # to fix - load pepper securely from env var
 
 # indexes
 PW = 0
@@ -27,7 +25,7 @@ class Database:
         
     def is_user_exist(self, email):
 
-        self.cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        self.cursor.execute(queries.FIND_USER, (email,))
         user = self.cursor.fetchone()
         return bool(user)
     
@@ -44,7 +42,7 @@ class Database:
         
         hashed_password, salt = res
 
-        return hashed_password == hash_password(password, salt)
+        return hashed_password == security.hash_password(password, salt)
 
     # def is_code_ok(self, email, code):
     #     if self.data[email][CODE] != '':
@@ -62,7 +60,7 @@ class Database:
         if self.is_user_exist(email):
             return False
 
-        hashed_pw, salt = generate_salt_hash(password)
+        hashed_pw, salt = security.generate_salt_hash(password)
 
         self.cursor.execute(queries.INSERT_USER, (email, hashed_pw, salt))
         self.conn.commit()
@@ -76,7 +74,7 @@ class Database:
 
     # ↓  ↓  ↓  ↓  to fix  ↓  ↓  ↓  ↓
     def reset_password(self, email, new_password):
-        hashed_pw, salt = generate_salt_hash(new_password)
+        hashed_pw, salt = security.generate_salt_hash(new_password)
         self.data[email][PW] = hashed_pw
         self.data[email][SALT] = salt
 
@@ -104,13 +102,6 @@ class Database:
             pickle.dump(self.data, file)
 
     def __str__(self):
-        return str(self.data)
-
-
-def hash_password(password: str, salt: bytes):
-    return hashlib.sha256(password.encode()+salt+PEPPER).hexdigest()
-
-def generate_salt_hash(password: str):
-    salt = bcrypt.gensalt()
-    hashed_pw = hash_password(password, salt)
-    return hashed_pw, salt
+        self.cursor.execute(queries.SELECT_ALL_USERS)
+        rows = self.cursor.fetchall()
+        return str(rows)

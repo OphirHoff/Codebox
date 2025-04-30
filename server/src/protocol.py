@@ -12,6 +12,7 @@ CODE_ERROR = 'ERRR'
 ### Error Codes ###
 '''
 001: General error
+101: Login failed
 102: User already exists (taken email address in registration)
 
 '''
