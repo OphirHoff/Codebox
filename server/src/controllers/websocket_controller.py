@@ -2,6 +2,7 @@ import asyncio
 import json
 import protocol
 from db import database
+from utils import user_file_manager
 import errors
 import traceback
 
@@ -11,7 +12,15 @@ SCRIPT = "script.py"
 
 
 def register_user(email: str, password: str):
-    return db.add_user(email, password)
+
+    regi_success = db.add_user(email, password)
+
+    if regi_success:
+        user_id: int = db.get_user_id(email)
+        user_file_manager.user_create_dir(user_id)
+        return True
+    
+    return False
 
 
 def login_user(email: str, password: str):
@@ -92,8 +101,6 @@ class Server:
 
             elif request_code == protocol.CODE_RUN_SCRIPT:
                 await self.run_script(request_data[0])
-                # t = threading.Thread(target=self.run_script, args=(request_data[0],))
-                # t.start(); t.join()  # Start and end thread for output sending
         
         except Exception as e:
             print(f"Error: {e}")

@@ -29,6 +29,15 @@ class Database:
         user = self.cursor.fetchone()
         return bool(user)
     
+    def get_user_id(self, email):
+        
+        if not self.is_user_exist(email):
+            raise errors.UserNotFoundError(email)
+
+        self.cursor.execute(queries.SELECT_USER_ID, (email,))
+        id: int = self.cursor.fetchone()[0]
+        return id
+    
     def is_password_ok(self, email, password):
 
         # salt = self.cursor.execute(queries.SELECT_USER_SALT, (email,))
