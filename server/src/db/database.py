@@ -7,7 +7,7 @@ import sys
 sys.path.append('../')  # Allow use of 'error.py' module
 import errors
 
-DB_FILE = "db\\users.sqlite"
+DB_FILE = "../data/users.sqlite"
 PEPPER = b'#K@(JJJFCS5D'  # to fix - load pepper securely from env var
 
 # indexes

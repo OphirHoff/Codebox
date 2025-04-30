@@ -90,9 +90,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			clearEmailPw();
 		}
 		else if (response_code == 'LOGR') {
-			alert(`Logged in. Welcome! (${emailInput.value})`);
 			displayUserEmail(emailInput.value);
 			enableFilesMenu();
+			alert(`Logged in. Welcome! (${emailInput.value})`);
 			clearEmailPw();
 		}
 		else if (response_code == 'OUTP') {
