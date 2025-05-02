@@ -779,6 +779,11 @@ pre {
     background-color: #333;
 }
 
+.folder-header.selected {
+    background-color: #2d4133;
+    border-left: 3px solid #4CAF50;
+}
+
 .folder-name {
     margin-left: 10px;
     flex-grow: 1;

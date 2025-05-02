@@ -409,6 +409,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		sidebar.classList.add('open');
 		sidebarOverlay.classList.remove('hidden');
 		document.body.style.overflow = 'hidden'; // Prevent scrolling when sidebar is open
+        
+        // Select the root folder by default
+        setTimeout(() => {
+            const rootFolderHeader = document.querySelector('.root-folder > .folder-header');
+            if (rootFolderHeader) {
+                rootFolderHeader.classList.add('selected');
+                lastSelectedFolder = rootFolderHeader.parentNode;
+            }
+        }, 100); // Small delay to ensure DOM is updated
 	});
 
 	// Close sidebar function
@@ -466,6 +475,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     chevron.style.transform = this.classList.contains('collapsed') ? 
                         'rotate(-90deg)' : 'rotate(0deg)';
                 }
+                
+                // Also set this as the last selected folder
+                lastSelectedFolder = this.parentNode;
+                
+                // Visual indication that this folder is selected
+                document.querySelectorAll('.folder-header.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                console.log('Selected folder:', this.querySelector('.folder-name').textContent);
             });
         });
     }
@@ -718,7 +738,8 @@ document.addEventListener('DOMContentLoaded', function () {
         addToFileStructure(newFile);
         
         console.log(`New file created: ${name}`);
-        
+       
+		
         // Here you would typically send this information to the server
         // This is the empty function mentioned in your requirements
         // For now we'll just log it
@@ -784,32 +805,6 @@ document.addEventListener('DOMContentLoaded', function () {
             fileStructure.push(newItem);
         }
     }
-    
-    // Enhancement to the existing function to also setup folder selection
-    // function populateFileTree() {
-        // const rootContents = document.querySelector('.root-folder > .folder-contents');
-        // if (!rootContents) return;
-        
-        // Clear existing content
-        // rootContents.innerHTML = '';
-        
-        // Add file structure
-        // fileStructure.forEach(item => {
-            // if (item.type === 'folder') {
-                // const folderItem = createFolderItem(item);
-                // rootContents.appendChild(folderItem);
-            // } else {
-                // const fileItem = createFileItem(item);
-                // rootContents.appendChild(fileItem);
-            // }
-        // });
-        
-        // Setup folder toggling for newly created elements
-        // setupFolderToggling();
-        
-        // Setup folder selection for newly created elements
-        // setupFolderSelection();
-    // }
 	
 	
 	

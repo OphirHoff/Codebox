@@ -31,7 +31,6 @@ def login_user(email: str, password: str) -> str | bool:
     try:
         if db.is_password_ok(email, password):
             user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
-            print(user_storage.files)
             return str(user_storage)
         return False
     

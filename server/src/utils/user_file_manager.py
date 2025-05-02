@@ -23,7 +23,10 @@ class UserStorage():
         self.files: list[dict] = files
         self.user_create_dir(self.user_id)
 
-    def create(type: FileType, extension: str):
+    def create_file(path: str, type: FileType, extension: str):
+        pass
+
+    def create_dir(path: str):
         pass
 
     def user_create_dir(self, uid: int):
