@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'LOGR') {
 			displayUserEmail(emailInput.value);
 			enableFilesMenu();
+			fileStructure = JSON.parse(data[0])
 			alert(`Logged in. Welcome! (${emailInput.value})`);
 			clearEmailPw();
 		}
@@ -566,32 +567,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 	
+	// let fileStructure = []
+	
 	// Sample file structure (in a real app, this would come from the server)
-	const fileStructure = [
-		{
-			type: 'folder',
-			name: 'Project 1',
-			children: [
-				{ type: 'file', name: 'index.html', extension: 'html' },
-				{ type: 'file', name: 'styles.css', extension: 'css' },
-				{ type: 'file', name: 'script.js', extension: 'js' }
-			]
-		},
-		{
-			type: 'folder',
-			name: 'Project 2',
-			children: [
-				{ type: 'file', name: 'main.py', extension: 'py' },
-				{ 
-					type: 'folder', 
-					name: 'data',
-					children: [
-						{ type: 'file', name: 'data.csv', extension: 'csv' },
-						{ type: 'file', name: 'config.json', extension: 'json' }
-					]
-				}
-			]
-		},
-		{ type: 'file', name: 'notes.txt', extension: 'txt' }
-	];
+	// const fileStructure = [
+		// {
+			// type: 'folder',
+			// name: 'Project 1',
+			// children: [
+				// { type: 'file', name: 'index.html', extension: 'html' },
+				// { type: 'file', name: 'styles.css', extension: 'css' },
+				// { type: 'file', name: 'script.js', extension: 'js' }
+			// ]
+		// },
+		// {
+			// type: 'folder',
+			// name: 'Project 2',
+			// children: [
+				// { type: 'file', name: 'main.py', extension: 'py' },
+				// { 
+					// type: 'folder', 
+					// name: 'data',
+					// children: [
+						// { type: 'file', name: 'data.csv', extension: 'csv' },
+						// { type: 'file', name: 'config.json', extension: 'json' }
+					// ]
+				// }
+			// ]
+		// },
+		// { type: 'file', name: 'notes.txt', extension: 'txt' }
+	// ];
 });

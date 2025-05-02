@@ -1,7 +1,7 @@
 import sqlite3
 import pickle
 import os
-from utils import security
+from utils import security, user_file_manager
 import db.queries as queries
 import datetime
 import errors
@@ -19,10 +19,10 @@ class Database:
         self.conn = sqlite3.connect(DB_FILE)
         self.cursor = self.conn.cursor()
 
-        # Initialize db if needed
-        if os.path.getsize(DB_FILE) == 0:
-            self.cursor.execute(queries.CREATE_USERS_TABLE)
-        
+        # Initialize db (will create tables only if needed)
+        self.cursor.execute(queries.CREATE_USERS_TABLE)
+        self.cursor.execute(queries.CREATE_USER_DATA_TABLE)
+
     def is_user_exist(self, email):
 
         self.cursor.execute(queries.FIND_USER, (email,))
@@ -64,7 +64,7 @@ class Database:
     #         return self.data[email][CODE][0]
     #     return False
     
-    def add_user(self, email, password, verf_code=None):
+    def add_user(self, email, password, storage_struct='[]', verf_code=None):
         ''' Returns true if successful, False is user already exists. '''
         if self.is_user_exist(email):
             return False
@@ -80,6 +80,26 @@ class Database:
 
         # exp_time = datetime.datetime.now() + datetime.timedelta(minutes=code_expiry)
         # self.data[email].append((verf_code, exp_time))
+
+
+    def set_user_files_struct(self, email, storage_struct: user_file_manager.UserStorage):
+
+        if not self.is_user_exist(email):
+            raise errors.UserNotFoundError(email)
+        
+        user_id = self.get_user_id(email)
+        pickled_data = pickle.dumps(storage_struct)
+        self.cursor.execute(queries.SET_FILE_STRUCT, (user_id, pickled_data))
+        self.conn.commit()
+
+    def get_user_files_struct(self, email) -> user_file_manager.UserStorage:
+
+        if not self.is_user_exist(email):
+            raise errors.UserNotFoundError(email)
+        
+        self.cursor.execute(queries.SELECT_FILE_STRUCT, (email,))
+        pickled_data = self.cursor.fetchone()[0]
+        return pickle.loads(pickled_data)
 
     # ↓  ↓  ↓  ↓  to fix  ↓  ↓  ↓  ↓
     def reset_password(self, email, new_password):

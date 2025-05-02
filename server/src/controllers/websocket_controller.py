@@ -11,21 +11,30 @@ db = database.Database()
 SCRIPT = "script.py"
 
 
-def register_user(email: str, password: str):
-
+def register_user(email: str, password: str) -> bool:
     regi_success = db.add_user(email, password)
 
     if regi_success:
         user_id: int = db.get_user_id(email)
-        user_file_manager.user_create_dir(user_id)
+        user_storage = user_file_manager.UserStorage(user_id)
+        db.set_user_files_struct(email, user_storage)
         return True
     
     return False
 
 
-def login_user(email: str, password: str):
+def login_user(email: str, password: str) -> str | bool:
+    """
+    Login succeed: Returns string json of user's files hierarchy 
+    \nLogin Failed: Returns False
+    """
     try:
-        return db.is_password_ok(email, password)
+        if db.is_password_ok(email, password):
+            user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+            print(user_storage.files)
+            return str(user_storage)
+        return False
+    
     except errors.UserNotFoundError as err:
         print(f"Error: {err}")
 
@@ -59,19 +68,15 @@ class Server:
     def server_create_response(self, request, data):
 
         if request == protocol.CODE_REGISTER:
-            if data:
-                # Registration succeeded
+            if data:  # Registration succeeded
                 to_send = protocol.CODE_REGISTER_SUCCESS
-            else:
-                # Registration failed (taken email address)
+            else:  # Registration failed
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_USER_EXIST}"
         
         elif request == protocol.CODE_LOGIN:
-            if data:
-                # Login succeeded
-                to_send = protocol.CODE_LOGIN_SUCCESS
-            else:
-                # Login failed
+            if data:  # Login succeeded
+                to_send = f"{protocol.CODE_LOGIN_SUCCESS}~{data}"
+            else:  # Login failed
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_LOGIN_FAILED}"
         
         elif request == protocol.CODE_RUN_SCRIPT:
