@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const registerBtn = document.querySelector('.register-btn');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
+	const newFileBtn = document.getElementById('new-file-btn');
+    const newFolderBtn = document.getElementById('new-folder-btn');
+    const createModal = document.getElementById('create-modal');
+    const createModalTitle = document.getElementById('create-modal-title');
+    const createModalIcon = document.getElementById('create-modal-icon');
+    const createModalText = document.getElementById('create-modal-text');
+    const createNameInput = document.getElementById('create-name-input');
+    const cancelCreateBtn = document.getElementById('cancel-create-btn');
+    const confirmCreateBtn = document.getElementById('confirm-create-btn');
 
     // Simulate loading sequence
     setTimeout(() => {
@@ -482,6 +491,9 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Setup folder toggling for newly created elements
         setupFolderToggling();
+        
+        // Setup folder selection for newly created elements
+        setupFolderSelection();
     }
     
     // Function to create a folder item
@@ -568,6 +580,238 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 	
 	// let fileStructure = []
+	
+	
+	// Track the last selected/clicked folder
+    let lastSelectedFolder = null;
+    
+    // Initialize create mode and create type variables
+    let createMode = ""; // 'file' or 'folder'
+    
+    // New File Button Click Event
+    if (newFileBtn) {
+        newFileBtn.addEventListener('click', function() {
+            openCreateModal('file');
+        });
+    }
+    
+    // New Folder Button Click Event
+    if (newFolderBtn) {
+        newFolderBtn.addEventListener('click', function() {
+            openCreateModal('folder');
+        });
+    }
+    
+    // Handle clicks on folder headers to track the last selected folder
+    function setupFolderSelection() {
+        // Get all folder headers
+        const folderHeaders = document.querySelectorAll('.folder-header');
+        
+        folderHeaders.forEach(header => {
+            header.addEventListener('click', function(e) {
+                // Set this as the last selected folder
+                // Store reference to the parent folder item element
+                lastSelectedFolder = this.parentNode;
+                
+                // Visual indication that this folder is selected (optional)
+                document.querySelectorAll('.folder-header.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                console.log('Selected folder:', this.querySelector('.folder-name').textContent);
+            });
+        });
+    }
+    
+    // Function to open the create modal
+    function openCreateModal(type) {
+        createMode = type;
+        
+        if (type === 'file') {
+            createModalIcon.className = 'fas fa-file-plus';
+            createModalText.textContent = 'New File';
+        } else {
+            createModalIcon.className = 'fas fa-folder-plus';
+            createModalText.textContent = 'New Folder';
+        }
+        
+        // Clear previous input
+        createNameInput.value = '';
+        
+        // Show the modal
+        createModal.classList.remove('hidden');
+        
+        // Focus the input field
+        createNameInput.focus();
+    }
+    
+    // Cancel create button
+    if (cancelCreateBtn) {
+        cancelCreateBtn.addEventListener('click', function() {
+            createModal.classList.add('hidden');
+        });
+    }
+    
+    // Also close modal when clicking outside
+    if (createModal) {
+        createModal.addEventListener('click', function(e) {
+            if (e.target === createModal) {
+                createModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Handle Enter key in the name input
+    if (createNameInput) {
+        createNameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                confirmCreate();
+            }
+        });
+    }
+    
+    // Confirm create button
+    if (confirmCreateBtn) {
+        confirmCreateBtn.addEventListener('click', confirmCreate);
+    }
+    
+    // Function to handle creation confirmation
+    function confirmCreate() {
+        const name = createNameInput.value.trim();
+        
+        if (!name) {
+            alert('Please enter a name.');
+            return;
+        }
+        
+        if (createMode === 'file') {
+            createNewFile(name);
+        } else {
+            createNewFolder(name);
+        }
+        
+        // Hide the modal
+        createModal.classList.add('hidden');
+        
+        // Refresh the file tree
+        populateFileTree();
+    }
+    
+    // Function to create a new file in the selected folder
+    function createNewFile(name) {
+        // Determine file extension or use txt as default
+        let extension = 'txt';
+        if (name.includes('.')) {
+            extension = name.split('.').pop();
+        } else {
+            name = name + '.txt';  // Add default extension if none provided
+        }
+        
+        const newFile = {
+            type: 'file',
+            name: name,
+            extension: extension
+        };
+        
+        // Add file to the appropriate location in the file structure
+        addToFileStructure(newFile);
+        
+        console.log(`New file created: ${name}`);
+        
+        // Here you would typically send this information to the server
+        // This is the empty function mentioned in your requirements
+        // For now we'll just log it
+    }
+    
+    // Function to create a new folder in the selected folder
+    function createNewFolder(name) {
+        const newFolder = {
+            type: 'folder',
+            name: name,
+            children: []
+        };
+        
+        // Add folder to the appropriate location in the file structure
+        addToFileStructure(newFolder);
+        
+        console.log(`New folder created: ${name}`);
+        
+        // Here you would typically send this information to the server
+        // This is the empty function mentioned in your requirements
+        // For now we'll just log it
+    }
+    
+    // Function to add a new item to the file structure based on the last selected folder
+    function addToFileStructure(newItem) {
+        // If no folder was selected, add to root
+        if (!lastSelectedFolder) {
+            fileStructure.push(newItem);
+            return;
+        }
+        
+        // Get the folder name from the last selected folder
+        const folderName = lastSelectedFolder.querySelector('.folder-name').textContent;
+        
+        // Find the folder in the structure and add the new item to its children
+        // This is a recursive function to search the entire structure
+        function findAndAddToFolder(items) {
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                
+                if (item.type === 'folder' && item.name === folderName) {
+                    // Found the target folder, add the new item to its children
+                    if (!item.children) {
+                        item.children = [];
+                    }
+                    item.children.push(newItem);
+                    return true;
+                }
+                
+                // If this is a folder, search its children
+                if (item.type === 'folder' && item.children) {
+                    if (findAndAddToFolder(item.children)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // Start the search from the root
+        if (!findAndAddToFolder(fileStructure)) {
+            // If folder not found, add to root as fallback
+            fileStructure.push(newItem);
+        }
+    }
+    
+    // Enhancement to the existing function to also setup folder selection
+    // function populateFileTree() {
+        // const rootContents = document.querySelector('.root-folder > .folder-contents');
+        // if (!rootContents) return;
+        
+        // Clear existing content
+        // rootContents.innerHTML = '';
+        
+        // Add file structure
+        // fileStructure.forEach(item => {
+            // if (item.type === 'folder') {
+                // const folderItem = createFolderItem(item);
+                // rootContents.appendChild(folderItem);
+            // } else {
+                // const fileItem = createFileItem(item);
+                // rootContents.appendChild(fileItem);
+            // }
+        // });
+        
+        // Setup folder toggling for newly created elements
+        // setupFolderToggling();
+        
+        // Setup folder selection for newly created elements
+        // setupFolderSelection();
+    // }
+	
+	
 	
 	// Sample file structure (in a real app, this would come from the server)
 	// const fileStructure = [
