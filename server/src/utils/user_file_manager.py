@@ -1,6 +1,7 @@
 from pathlib import Path
 from enum import Enum
 import json
+from protocol import JsonEntries
 import errors
 
 USER_STORAGE_BASE_DIR = "../user_storage"
@@ -31,8 +32,7 @@ class UserStorage():
             raise errors.FileAlreadyExists(path)
         
         file_path.touch()
-
-
+        self.update_tree(FileType.FILE, path)
         
     def create_dir(self, path: str):
         
@@ -42,11 +42,47 @@ class UserStorage():
             raise errors.FolderAlreadyExists(path)
         
         folder_path.mkdir()
+        self.update_tree(FileType.FOLDER, path)
 
-    def update_tree(self, type: FileType, path):
+    def update_tree(self, node_type: FileType, path: str):
         """ Update user files tree. """
 
+        path: list = path.split('/')
+        to_add = path.pop(-1)
+
+        current = self.files  # Holds current directory node in the tree
+
+        if path:  # Iterate only if not in the root dir of user's storage
+            for i in range(len(path)):
+
+                curr_node = path.pop(0)    
+                found_next_node = False
+
+                # Find the next node in path
+                for node in current:
+                    if node[JsonEntries.NODE_NAME] == curr_node and node[JsonEntries.NODE_TYPE] == FileType.FOLDER.value:
+                        current = node[JsonEntries.SUB_DIRECTORY]
+                        found_next_node = True
+                
+                # In case node was not found
+                if not found_next_node:
+                    raise FileNotFoundError(f"Path not found: {path}")
+
+        # Create new node & add to tree
+        if node_type == FileType.FILE:
+            new_node = {
+                JsonEntries.NODE_TYPE: node_type.value,
+                JsonEntries.NODE_NAME: to_add
+                }
         
+        else:
+            new_node = {
+                JsonEntries.NODE_TYPE: node_type.value,
+                JsonEntries.NODE_NAME: to_add,
+                JsonEntries.SUB_DIRECTORY: []
+                }
+
+        current.append(new_node)
 
     def user_create_dir(self):
     
@@ -58,4 +94,4 @@ class UserStorage():
         folder_path.mkdir()
 
     def __str__(self):
-        return json.dumps(self.files)
+        return json.dumps(self.files, indent=4)

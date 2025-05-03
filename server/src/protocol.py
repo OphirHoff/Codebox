@@ -27,3 +27,6 @@ class JsonEntries:
     NODE_TYPE = 'type'
     NODE_NAME = 'name'
     NODE_PATH = 'path'
+
+    # Subdirectories
+    SUB_DIRECTORY = 'children'

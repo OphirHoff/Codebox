@@ -164,3 +164,5 @@ def user_storage_add(email, new_node: str):
         user_storage.create_dir(path)
     else:
         raise errors.InvalidEntry(protocol.JsonEntries.NODE_TYPE, create_type)
+    
+    db.set_user_files_struct(email, user_storage)
