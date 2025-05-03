@@ -621,32 +621,10 @@ document.addEventListener('DOMContentLoaded', function () {
             openCreateModal('folder');
         });
     }
-    
-    // Handle clicks on folder headers to track the last selected folder
-    // function setupFolderSelection() {
-        // Get all folder headers
-        // const folderHeaders = document.querySelectorAll('.folder-header');
-        
-        // folderHeaders.forEach(header => {
-            // header.addEventListener('click', function(e) {
-                // Set this as the last selected folder
-                // Store reference to the parent folder item element
-                // lastSelectedFolder = this.parentNode;
-                
-                // Visual indication that this folder is selected (optional)
-                // document.querySelectorAll('.folder-header.selected').forEach(el => {
-                    // el.classList.remove('selected');
-                // });
-                // this.classList.add('selected');
-                
-                // console.log('Selected folder:', this.querySelector('.folder-name').textContent);
-            // });
-        // });
-    // }
 	
 	// Function to setup folder selection with path tracking
 	function setupFolderSelection() {
-		// Get all folder headers
+    // Get all folder headers
 		const folderHeaders = document.querySelectorAll('.folder-header');
 		
 		folderHeaders.forEach(header => {
@@ -654,8 +632,8 @@ document.addEventListener('DOMContentLoaded', function () {
 				// Set this as the last selected folder
 				lastSelectedFolder = this.parentNode;
 				
-				// Update current path
-				updatePathFromSelection(this);
+				// Get the folder path using the DOM structure
+				currentPath = buildPathFromDom(this.parentNode);
 				
 				// Visual indication that this folder is selected
 				document.querySelectorAll('.folder-header.selected').forEach(el => {
@@ -663,45 +641,57 @@ document.addEventListener('DOMContentLoaded', function () {
 				});
 				this.classList.add('selected');
 				
-				console.log('Selected folder:', this.querySelector('.folder-name').textContent);
+				const folderName = this.querySelector('.folder-name').textContent;
+				console.log('Selected folder:', folderName);
 				console.log('Current path:', currentPath.join('/'));
 			});
 		});
 	}
-	
+
 	// Function to update the current path based on selected folder
 	function updatePathFromSelection(selectedHeader) {
 		// Reset path
 		currentPath = [];
 		
-		// Start from the selected element and go up the DOM tree
+		// Start from the selected element and work our way up through the DOM
 		let current = selectedHeader;
-		let folderName;
+		const pathElements = [];
 		
-		// Track path from current folder up to root
-		while (current) {
-			// Check if this is a folder header
+		// First collect all folder elements in the path
+		while (current && current.parentNode) {
+			// If this is a folder header, add it to our path elements
 			if (current.classList && current.classList.contains('folder-header')) {
-				folderName = current.querySelector('.folder-name');
-				if (folderName) {
-					// Add folder name to the beginning of the path
-					currentPath.unshift(folderName.textContent);
+				const nameElement = current.querySelector('.folder-name');
+				if (nameElement) {
+					pathElements.unshift({
+						element: current,
+						name: nameElement.textContent
+					});
 				}
 			}
 			
-			// Move to parent
-			current = current.parentNode;
+			// Move to parent element
+			if (current.parentNode.classList && current.parentNode.classList.contains('folder-item')) {
+				current = current.parentNode;
+			} else {
+				current = current.parentNode;
+			}
 			
-			// Stop when we reach the file-tree or body
+			// Stop when we reach the file-tree
 			if (current.classList && (current.classList.contains('file-tree') || current === document.body)) {
 				break;
 			}
 		}
 		
-		// If we're at the root folder, adjust path
-		if (currentPath.length === 1 && currentPath[0] === 'your_files') {
-			currentPath = [];
+		// Now build the path from the collected elements
+		for (const item of pathElements) {
+			if (item.name !== 'your_files') { // Skip the root folder name
+				currentPath.push(item.name);
+			}
 		}
+		
+		console.log("Path elements found:", pathElements.length);
+		console.log("Built path:", currentPath);
 	}
     
     // Function to open the create modal
@@ -779,60 +769,52 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // Function to create a new file in the selected folder
-    function createNewFile(name) {
-        // Determine file extension or use txt as default
-        let extension = 'txt';
-        if (name.includes('.')) {
-            extension = name.split('.').pop();
-        } else {
-            name = name + '.txt';  // Add default extension if none provided
-        }
-        
-        const newFile = {
-            type: 'file',
-            name: name,
-            extension: extension
-        };
-        
+	function createNewFile(name) {
+		// Determine file extension or use txt as default
+		let extension = 'txt';
+		if (name.includes('.')) {
+			extension = name.split('.').pop();
+		} else {
+			name = name + '.txt';  // Add default extension if none provided
+		}
+		
+		const newFile = {
+			type: 'file',
+			name: name,
+			extension: extension
+		};
+		
 		// Generate the full path for the new file
 		const filePath = [...currentPath, name].join('/');
 		
-        // Add file to the appropriate location in the file structure
-        addToFileStructure(newFile);
-        
-        console.log(`New file created: ${name} at path: ${filePath}`);
+		// Add file to the appropriate location in the file structure
+		addToFileStructure(newFile);
+		
+		console.log(`New file created: ${name} at path: ${filePath}`);
 		
 		// Send the file creation info to the server
 		sendFileCreationToServer('file', name, filePath);
-		
-        // Here you would typically send this information to the server
-        // This is the empty function mentioned in your requirements
-        // For now we'll just log it
-    }
+	}
     
     // Function to create a new folder in the selected folder
-    function createNewFolder(name) {
-        const newFolder = {
-            type: 'folder',
-            name: name,
-            children: []
-        };
+	function createNewFolder(name) {
+		const newFolder = {
+			type: 'folder',
+			name: name,
+			children: []
+		};
 		
 		// Generate the full path for the new folder
 		const folderPath = [...currentPath, name].join('/');
-        
-        // Add folder to the appropriate location in the file structure
-        addToFileStructure(newFolder);
-        
-        console.log(`New folder created: ${name} at path: ${folderPath}`);
-        
+		
+		// Add folder to the appropriate location in the file structure
+		addToFileStructure(newFolder);
+		
+		console.log(`New folder created: ${name} at path: ${folderPath}`);
+		
 		// Send the folder creation info to the server
 		sendFileCreationToServer('folder', name, folderPath);
-		
-        // Here you would typically send this information to the server
-        // This is the empty function mentioned in your requirements
-        // For now we'll just log it
-    }
+	}
     
     // Function to add a new item to the file structure based on the last selected folder
     function addToFileStructure(newItem) {
@@ -895,7 +877,38 @@ document.addEventListener('DOMContentLoaded', function () {
 			alert(`Unable to create ${type}: Server connection not available`);
 		}
 	}
-
+	
+	// Function to recursively build path from DOM structure
+	function buildPathFromDom(element) {
+		const path = [];
+		
+		// Start from the element and traverse up through all parent folder items
+		let current = element;
+		
+		while (current) {
+			// If this is a folder item
+			if (current.classList && current.classList.contains('folder-item')) {
+				const folderHeader = current.querySelector(':scope > .folder-header');
+				if (folderHeader) {
+					const nameElement = folderHeader.querySelector('.folder-name');
+					if (nameElement && nameElement.textContent !== 'your_files') {
+						path.unshift(nameElement.textContent);
+					}
+				}
+			}
+			
+			// Check if parent is a folder-contents which is inside another folder-item
+			const parentFolderContents = current.parentElement;
+			if (parentFolderContents && parentFolderContents.classList.contains('folder-contents')) {
+				current = parentFolderContents.parentElement; // This should be the parent folder-item
+			} else {
+				break; // Exit if we're not in a nested structure
+			}
+		}
+		
+		return path;
+	}
+	
 	// When opening a folder for the first time, initialize the path
 	document.querySelector('.root-folder > .folder-header').addEventListener('click', function(e) {
 		// Reset path since we're clicking the root

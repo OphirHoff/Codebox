@@ -31,6 +31,8 @@ class UserStorage():
             raise errors.FileAlreadyExists(path)
         
         file_path.touch()
+
+
         
     def create_dir(self, path: str):
         
@@ -40,6 +42,11 @@ class UserStorage():
             raise errors.FolderAlreadyExists(path)
         
         folder_path.mkdir()
+
+    def update_tree(self, type: FileType, path):
+        """ Update user files tree. """
+
+        
 
     def user_create_dir(self):
     
