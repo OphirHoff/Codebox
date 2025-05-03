@@ -1038,7 +1038,7 @@ pre {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
+	transition: background-color 0.3s, transform 0.1s;
 }
 
 .save-button i {
@@ -1049,8 +1049,8 @@ pre {
     background-color: #0b7dda;
 }
 
-.save-button:active {
-    background-color: #3e8e41;
+#save-btn:active {
+    transform: scale(0.95);
 }
 
 /* Selected file styling */
