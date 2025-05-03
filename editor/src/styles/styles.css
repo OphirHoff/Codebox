@@ -422,27 +422,28 @@ pre {
     font-size: 14px;
 }
 
-/* User Email Display Styles */
-.user-email-display {
+.auth-container {
     position: absolute;
     left: 80px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* User Email Display Styles */
+.user-email-display {
     background-color: #333;
     color: white;
-    border: none;
     padding: 10px 20px;
-    font-size: 16px;
     border-radius: 6px;
     font-family: 'Montserrat', sans-serif;
     display: flex;
     align-items: center;
     gap: 8px;
     white-space: nowrap;
+    max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
-    box-sizing: border-box;
-    width: auto; /* Allow width to adjust to content */
-    max-width: 300px; /* Set maximum width */
-    transition: width 0.3s ease-out; /* Smooth transition when width changes */
 }
 
 .modal {
@@ -1023,4 +1024,55 @@ pre {
 
 .folder.collapsed > .folder-children {
     opacity: 0;
+}
+
+.save-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+	font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.save-button i {
+    margin-right: 5px;
+}
+
+.save-button:hover {
+    background-color: #0b7dda;
+}
+
+.save-button:active {
+    background-color: #3e8e41;
+}
+
+/* Selected file styling */
+.file-item.selected {
+    background-color: rgba(65, 132, 228, 0.15);
+    border-radius: 4px;
+}
+
+/* Selected folder styling (already exists but ensuring it's consistent) */
+.folder-header.selected {
+    background-color: rgba(65, 132, 228, 0.15);
+    border-radius: 4px;
+}
+
+/* When editor has a file being edited */
+.code-editor.editing {
+    border: 1px solid #4CAF50;
+}
+
+/* Loading and disabled state for editor */
+textarea#gravity-code:disabled {
+    background-color: #2a2a2a;
+    color: #999;
+    cursor: wait;
 }

@@ -69,6 +69,12 @@ class ClientHandler:
             else:  # File wasn't found
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
+        elif request == protocol.CODE_SAVE_FILE:
+            if data:
+                to_send = protocol.CODE_FILE_SAVED
+            else:
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
+
         elif request == protocol.CODE_RUN_SCRIPT:
             serialized_data = { 'output' : data }
             to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
@@ -99,6 +105,10 @@ class ClientHandler:
 
             elif code == protocol.CODE_GET_FILE:
                 to_send = self.server_create_response(code, get_user_file(self.email, data[0]))
+
+            elif code == protocol.CODE_SAVE_FILE:
+                data: dict = json.loads(data[0])
+                to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"]))
 
             elif code == protocol.CODE_RUN_SCRIPT:
                 await self.run_script(data[0])
@@ -178,9 +188,25 @@ def user_storage_add(email, new_node: str):
     
     db.set_user_files_struct(email, user_storage)
 
-def get_user_file(email, path: str):
+
+def get_user_file(email, path: str) -> str | bool:
 
     user_id = db.get_user_id(email)
 
-    file_content = user_file_manager.get_file_content(user_id, path)
-    return file_content
+    try:
+        file_content = user_file_manager.get_file_content(user_id, path)
+        return file_content
+    except FileNotFoundError:
+        return False
+
+
+def update_user_file(email, path: str, new_content: str) -> bool:
+
+    user_id = db.get_user_id(email)
+
+    try:
+        user_file_manager.update_file_content(user_id, path, new_content)
+        return True
+    except FileNotFoundError:
+        return False
+

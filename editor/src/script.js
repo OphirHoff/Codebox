@@ -113,6 +113,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			fileContentChanged = false;
 			updateLineNumbers();
 		}
+		else if (response_code == 'SAVR') {
+			alert("File was saved successfuly!");
+		}
 		else if (response_code == 'OUTP') {
 			let runOutputData = JSON.parse(data[0]);
 			runOutput = runOutputData['output'];
@@ -127,10 +130,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 	
 	let errors = {
-		"001": "General Error",
-		"101": "Login Failed",
-		"102": "User already exists",
-		"201": "File not found"
+		"001": "General Error (001)",
+		"101": "Login Failed (101)",
+		"102": "User already exists (102)",
+		"201": "File not found (201)"
 	};
 
     // Function to send code to the server
@@ -310,33 +313,45 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 	
 	// Function to replace login button with user email display
-    function displayUserEmail(email) {
-        const authBtn = document.getElementById('auth-btn');
-        if (!authBtn) return;
-        
-        // Get current dimensions and position of the auth button
-        const authBtnRect = authBtn.getBoundingClientRect();
-        const minWidth = authBtnRect.width;
-        const height = authBtnRect.height;
-        
-        // Create user email display element
-        const userEmailDisplay = document.createElement('div');
-        userEmailDisplay.id = 'user-email-display';
-        userEmailDisplay.className = 'user-email-display';
-        
-        // Don't set fixed width - let it expand naturally
-        userEmailDisplay.style.minWidth = `${minWidth}px`;
-        userEmailDisplay.style.height = `${height}px`;
-        userEmailDisplay.style.maxWidth = '300px'; // Set a maximum width to prevent excessive stretching
-        
-        // Add email text with user icon
-        userEmailDisplay.innerHTML = `<i class="fas fa-user"></i> ${email}`;
-        
-        // Replace the auth button with our new element
-        authBtn.parentNode.replaceChild(userEmailDisplay, authBtn);
-        
-        console.log(`Replaced login button with email: ${email}`);
-    }
+	function displayUserEmail(email) {
+		const authBtn = document.getElementById('auth-btn');
+		
+		// Create user email display element
+		const userEmailDisplay = document.createElement('div');
+		userEmailDisplay.id = 'user-email-display';
+		userEmailDisplay.className = 'user-email-display';
+		userEmailDisplay.innerHTML = `<i class="fas fa-user"></i> ${email}`;
+
+		// Create or find the auth container
+		let authContainer = document.getElementById('auth-container');
+		if (!authContainer) {
+			authContainer = document.createElement('div');
+			authContainer.id = 'auth-container';
+			authContainer.className = 'auth-container';
+
+			// Insert the container in the header
+			const header = document.querySelector('header');
+			if (header) {
+				// If auth button exists, replace it with the container
+				if (authBtn && authBtn.parentNode) {
+					authBtn.parentNode.replaceChild(authContainer, authBtn);
+				} else {
+					// Otherwise insert after title container
+					const titleContainer = document.querySelector('.title-container');
+					if (titleContainer) {
+						header.insertBefore(authContainer, titleContainer.nextSibling);
+					} else {
+						header.appendChild(authContainer);
+					}
+				}
+			}
+		}
+
+		// Add the user email display to the container
+		authContainer.appendChild(userEmailDisplay);
+
+		console.log(`Displaying user email: ${email}`);
+	}
 
     // Initial update
     updateLineNumbers();
@@ -615,24 +630,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		return fileItem;
 	}
 	
-    // Function to create a file item
-    // function createFileItem(file) {
-        // const fileItem = document.createElement('div');
-        // fileItem.className = 'file-item';
-        
-        // const fileIcon = document.createElement('i');
-        // fileIcon.className = getFileIcon(file.extension);
-        
-        // const fileName = document.createElement('span');
-        // fileName.className = 'file-name';
-        // fileName.textContent = file.name;
-        
-        // fileItem.appendChild(fileIcon);
-        // fileItem.appendChild(fileName);
-        
-        // return fileItem;
-    // }
-	
 	// Function to load file content into editor
 	function loadFileContent(fileName, filePath) {
 		// Request file content from server
@@ -652,31 +649,42 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	// Function to create and show save button
-	function showSaveButton() {
+	
+		function showSaveButton() {
 		// Remove existing save button if it exists
 		const existingSaveBtn = document.getElementById('save-btn');
 		if (existingSaveBtn) {
 			existingSaveBtn.remove();
 		}
-		
+
 		// Create save button
 		const saveBtn = document.createElement('button');
 		saveBtn.id = 'save-btn';
 		saveBtn.className = 'save-button';
-		saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-		
-		// Add click event to save file
+		saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save';
 		saveBtn.addEventListener('click', saveCurrentFile);
-		
-		// Find where to place it (after the user email display or auth button)
-		const userEmailDisplay = document.getElementById('user-email-display');
-		const authBtn = document.getElementById('auth-btn');
-		
-		if (userEmailDisplay) {
-			userEmailDisplay.parentNode.insertBefore(saveBtn, userEmailDisplay.nextSibling);
-		} else if (authBtn) {
-			authBtn.parentNode.insertBefore(saveBtn, authBtn.nextSibling);
+
+		// Find or create auth container
+		let authContainer = document.getElementById('auth-container');
+		if (!authContainer) {
+			authContainer = document.createElement('div');
+			authContainer.id = 'auth-container';
+			authContainer.className = 'auth-container';
+
+			// Insert container in header
+			const header = document.querySelector('header');
+			if (header) {
+				const titleContainer = document.querySelector('.title-container');
+				if (titleContainer) {
+					header.insertBefore(authContainer, titleContainer.nextSibling);
+				} else {
+					header.appendChild(authContainer);
+				}
+			}
 		}
+
+		// Add save button to container
+		authContainer.appendChild(saveBtn);
 	}
 
 	// Function to save current file content
@@ -1042,8 +1050,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		console.log('Root folder selected, path reset to: []');
 	});
 	
-	
-	// Sample file structure (in a real app, this would come from the server)
+	// Sample file structure (this would come from the server)
 	// const fileStructure = [
 		// {
 			// type: 'folder',

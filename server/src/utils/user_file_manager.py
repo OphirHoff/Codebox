@@ -26,6 +26,15 @@ def get_file_content(uid: int, path: str):
     content = file_path.read_text(encoding="utf-8")
     return content
 
+def update_file_content(uid: int, path: str, new_content: str):
+
+    file_path = Path(f"{user_folder_name(uid)}/{path}")
+    
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {user_folder_name(uid)}/{path}")
+
+    file_path.write_text(new_content, encoding="utf-8")
+
 
 class UserStorage():
     def __init__(self, user_id: int, files=[]):
