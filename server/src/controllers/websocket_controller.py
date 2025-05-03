@@ -11,34 +11,6 @@ import traceback
 db = database.Database()
 SCRIPT = "script.py"
 
-
-def register_user(email: str, password: str) -> bool:
-    regi_success = db.add_user(email, password)
-
-    if regi_success:
-        user_id: int = db.get_user_id(email)
-        user_storage = user_file_manager.UserStorage(user_id)
-        db.set_user_files_struct(email, user_storage)
-        return True
-    
-    return False
-
-
-def login_user(email: str, password: str) -> str | bool:
-    """
-    Login succeed: Returns string json of user's files hierarchy 
-    \nLogin Failed: Returns False
-    """
-    try:
-        if db.is_password_ok(email, password):
-            user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
-            return str(user_storage)
-        return False
-    
-    except errors.UserNotFoundError as err:
-        print(f"Error: {err}")
-
-
 class Server:
     def __init__(self):
         self.clients: dict = {}  # websocket -> email
@@ -121,7 +93,9 @@ class ClientHandler:
                 await self.run_script(data[0])
 
             elif code == protocol.CODE_STORAGE_ADD:
-                pass
+                data: dict = json.loads(data[0])
+                user_storage_add(self.email, data)
+                to_send = None  # To fix - return appropriate response
         
         except Exception as e:
             print(f"Error: {e}")
@@ -148,3 +122,45 @@ class ClientHandler:
                 await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
             
             await process.wait()
+
+
+def register_user(email: str, password: str) -> bool:
+    regi_success = db.add_user(email, password)
+
+    if regi_success:
+        user_id: int = db.get_user_id(email)
+        user_storage = user_file_manager.UserStorage(user_id)
+        db.set_user_files_struct(email, user_storage)
+        return True
+    
+    return False
+
+
+def login_user(email: str, password: str) -> str | bool:
+    """
+    Login succeed: Returns string json of user's files hierarchy 
+    \nLogin Failed: Returns False
+    """
+    try:
+        if db.is_password_ok(email, password):
+            user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+            return str(user_storage)
+        return False
+    
+    except errors.UserNotFoundError as err:
+        print(f"Error: {err}")
+
+
+def user_storage_add(email, new_node: str):
+
+    user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+
+    create_type: str = new_node[protocol.JsonEntries.NODE_TYPE]
+    path: str = new_node[protocol.JsonEntries.NODE_PATH]
+
+    if create_type == user_file_manager.FileType.FILE.value:
+        user_storage.create_file(path)
+    elif create_type == user_file_manager.FileType.FOLDER.value:
+        user_storage.create_dir(path)
+    else:
+        raise errors.InvalidEntry(protocol.JsonEntries.NODE_TYPE, create_type)

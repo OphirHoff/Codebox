@@ -15,8 +15,15 @@ CODE_ERROR = 'ERRR'
 001: General error
 101: Login failed
 102: User already exists (taken email address in registration)
-
 '''
 ERROR_GENERAL = '001'
 ERROR_LOGIN_FAILED = '101'
 ERROR_USER_EXIST = '102'
+
+
+class JsonEntries:
+
+    # Create new file / directory
+    NODE_TYPE = 'type'
+    NODE_NAME = 'name'
+    NODE_PATH = 'path'
