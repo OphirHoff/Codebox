@@ -105,6 +105,14 @@ document.addEventListener('DOMContentLoaded', function () {
 			alert(`Logged in. Welcome! (${emailInput.value})`);
 			clearEmailPw();
 		}
+		else if (response_code == 'FILC') {
+			let fileData = JSON.parse(data[0]);
+			let fileContent = fileData['content'];
+			codeInput.value = fileContent;
+			codeInput.disabled = false;
+			fileContentChanged = false;
+			updateLineNumbers();
+		}
 		else if (response_code == 'OUTP') {
 			let runOutputData = JSON.parse(data[0]);
 			runOutput = runOutputData['output'];
@@ -121,7 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	let errors = {
 		"001": "General Error",
 		"101": "Login Failed",
-		"102": "User already exists"
+		"102": "User already exists",
+		"201": "File not found"
 	};
 
     // Function to send code to the server
@@ -559,23 +568,136 @@ document.addEventListener('DOMContentLoaded', function () {
         return folderItem;
     }
     
+	// Function to create a file item with click handler
+	function createFileItem(file) {
+		const fileItem = document.createElement('div');
+		fileItem.className = 'file-item';
+		
+		const fileIcon = document.createElement('i');
+		fileIcon.className = getFileIcon(file.extension);
+		
+		const fileName = document.createElement('span');
+		fileName.className = 'file-name';
+		fileName.textContent = file.name;
+		
+		fileItem.appendChild(fileIcon);
+		fileItem.appendChild(fileName);
+		
+		// Add click event to load file content
+		fileItem.addEventListener('click', function() {
+			// Check if there are unsaved changes in the current file
+			if (fileContentChanged) {
+				saveCurrentFile();
+			}
+			
+			// Get file path
+			const filePath = [...buildPathFromDom(this), file.name].join('/');
+			loadFileContent(file.name, filePath);
+			
+			// Visual indication that this file is selected
+			document.querySelectorAll('.file-item.selected').forEach(el => {
+				el.classList.remove('selected');
+			});
+			this.classList.add('selected');
+			
+			// Store current file info
+			currentFile = {
+				name: file.name,
+				path: filePath
+			};
+			
+			// Show save button
+			showSaveButton();
+			
+			console.log('Selected file:', file.name, 'at path:', filePath);
+		});
+		
+		return fileItem;
+	}
+	
     // Function to create a file item
-    function createFileItem(file) {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
+    // function createFileItem(file) {
+        // const fileItem = document.createElement('div');
+        // fileItem.className = 'file-item';
         
-        const fileIcon = document.createElement('i');
-        fileIcon.className = getFileIcon(file.extension);
+        // const fileIcon = document.createElement('i');
+        // fileIcon.className = getFileIcon(file.extension);
         
-        const fileName = document.createElement('span');
-        fileName.className = 'file-name';
-        fileName.textContent = file.name;
+        // const fileName = document.createElement('span');
+        // fileName.className = 'file-name';
+        // fileName.textContent = file.name;
         
-        fileItem.appendChild(fileIcon);
-        fileItem.appendChild(fileName);
+        // fileItem.appendChild(fileIcon);
+        // fileItem.appendChild(fileName);
         
-        return fileItem;
-    }
+        // return fileItem;
+    // }
+	
+	// Function to load file content into editor
+	function loadFileContent(fileName, filePath) {
+		// Request file content from server
+		const contentRequest = `GETF~${filePath}`;
+		
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(contentRequest);
+			console.log(`Requested content for file: ${filePath}`);
+			
+			// Show loading indicator in editor
+			codeInput.value = `# Loading ${fileName}...`;
+			codeInput.disabled = true;
+		} else {
+			console.error('WebSocket not connected');
+			alert('Unable to load file: Server connection not available');
+		}
+	}
+
+	// Function to create and show save button
+	function showSaveButton() {
+		// Remove existing save button if it exists
+		const existingSaveBtn = document.getElementById('save-btn');
+		if (existingSaveBtn) {
+			existingSaveBtn.remove();
+		}
+		
+		// Create save button
+		const saveBtn = document.createElement('button');
+		saveBtn.id = 'save-btn';
+		saveBtn.className = 'save-button';
+		saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+		
+		// Add click event to save file
+		saveBtn.addEventListener('click', saveCurrentFile);
+		
+		// Find where to place it (after the user email display or auth button)
+		const userEmailDisplay = document.getElementById('user-email-display');
+		const authBtn = document.getElementById('auth-btn');
+		
+		if (userEmailDisplay) {
+			userEmailDisplay.parentNode.insertBefore(saveBtn, userEmailDisplay.nextSibling);
+		} else if (authBtn) {
+			authBtn.parentNode.insertBefore(saveBtn, authBtn.nextSibling);
+		}
+	}
+
+	// Function to save current file content
+	function saveCurrentFile() {
+		if (!currentFile) return;
+		
+		const fileContent = codeInput.value;
+		const saveRequest = `SAVF~${JSON.stringify({
+			path: currentFile.path,
+			content: fileContent
+		})}`;
+		
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(saveRequest);
+			console.log(`Saved file: ${currentFile.path}`);
+			fileContentChanged = false;
+		} else {
+			console.error('WebSocket not connected');
+			alert('Unable to save file: Server connection not available');
+		}
+	}
     
     // Get file icon based on extension
     function getFileIcon(extension) {
@@ -607,6 +729,10 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Initialize create mode and create type variables
     let createMode = ""; // 'file' or 'folder'
+	
+	// Variables to track current state
+	let currentFile = null;
+	let fileContentChanged = false;
     
     // New File Button Click Event
     if (newFileBtn) {

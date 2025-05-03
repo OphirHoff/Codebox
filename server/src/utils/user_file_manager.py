@@ -16,13 +16,23 @@ class FileType(Enum):
 def user_folder_name(uid: int):
     return f"{USER_STORAGE_BASE_DIR}/{USER_FOLDER_NAME_PREFIX}{str(uid).zfill(USER_ID_LEN)}"
 
+def get_file_content(uid: int, path: str):
+
+    file_path = Path(f"{user_folder_name(uid)}/{path}")
+    
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {user_folder_name(uid)}/{path}")
+    
+    content = file_path.read_text(encoding="utf-8")
+    return content
+
 
 class UserStorage():
     def __init__(self, user_id: int, files=[]):
         self.user_id = user_id
         self.folder_name = user_folder_name(user_id)
         self.files: list[dict] = files
-        self.user_create_dir()
+        self.create_user_storage()
 
     def create_file(self, path: str):
 
@@ -84,7 +94,7 @@ class UserStorage():
 
         current.append(new_node)
 
-    def user_create_dir(self):
+    def create_user_storage(self):
     
         folder_path = Path(self.folder_name)
 

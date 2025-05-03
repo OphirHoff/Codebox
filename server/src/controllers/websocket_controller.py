@@ -38,10 +38,11 @@ class ClientHandler:
         try:
             while True:
                 msg = await self.websocket.recv()
-                print(f"Received from client: {msg}")
+                print(f"Received: {msg}")
                 response = await self.handle_request(msg)
                 if response:
                     await self.websocket.send(response)
+                    print(f"Sent: {response}")
         except websockets.exceptions.ConnectionClosed:
             print(f"Client disconnected: {self.email or 'unknown'}")
         finally:
@@ -61,6 +62,13 @@ class ClientHandler:
             else:  # Login failed
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_LOGIN_FAILED}"
         
+        elif request == protocol.CODE_GET_FILE:
+            if data or data == '':  # File exists (data == '' to support empty files)
+                serialized_data = { 'content' : data }
+                to_send = f"{protocol.CODE_FILE_CONTENT}~{json.dumps(serialized_data)}"
+            else:  # File wasn't found
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
+
         elif request == protocol.CODE_RUN_SCRIPT:
             serialized_data = { 'output' : data }
             to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
@@ -88,6 +96,9 @@ class ClientHandler:
                     self.server.register_logged_user(self.websocket, email)
                     self.email = email
                 to_send = self.server_create_response(code, res)
+
+            elif code == protocol.CODE_GET_FILE:
+                to_send = self.server_create_response(code, get_user_file(self.email, data[0]))
 
             elif code == protocol.CODE_RUN_SCRIPT:
                 await self.run_script(data[0])
@@ -166,3 +177,10 @@ def user_storage_add(email, new_node: str):
         raise errors.InvalidEntry(protocol.JsonEntries.NODE_TYPE, create_type)
     
     db.set_user_files_struct(email, user_storage)
+
+def get_user_file(email, path: str):
+
+    user_id = db.get_user_id(email)
+
+    file_content = user_file_manager.get_file_content(user_id, path)
+    return file_content
