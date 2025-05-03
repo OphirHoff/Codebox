@@ -599,11 +599,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 	
-	// let fileStructure = []
-	
+	// Variables to track current path and selection
+	let currentPath = [];
 	
 	// Track the last selected/clicked folder
-    let lastSelectedFolder = null;
+	let lastSelectedFolder = null;
     
     // Initialize create mode and create type variables
     let createMode = ""; // 'file' or 'folder'
@@ -623,26 +623,86 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // Handle clicks on folder headers to track the last selected folder
-    function setupFolderSelection() {
+    // function setupFolderSelection() {
         // Get all folder headers
-        const folderHeaders = document.querySelectorAll('.folder-header');
+        // const folderHeaders = document.querySelectorAll('.folder-header');
         
-        folderHeaders.forEach(header => {
-            header.addEventListener('click', function(e) {
+        // folderHeaders.forEach(header => {
+            // header.addEventListener('click', function(e) {
                 // Set this as the last selected folder
                 // Store reference to the parent folder item element
-                lastSelectedFolder = this.parentNode;
+                // lastSelectedFolder = this.parentNode;
                 
                 // Visual indication that this folder is selected (optional)
-                document.querySelectorAll('.folder-header.selected').forEach(el => {
-                    el.classList.remove('selected');
-                });
-                this.classList.add('selected');
+                // document.querySelectorAll('.folder-header.selected').forEach(el => {
+                    // el.classList.remove('selected');
+                // });
+                // this.classList.add('selected');
                 
-                console.log('Selected folder:', this.querySelector('.folder-name').textContent);
-            });
-        });
-    }
+                // console.log('Selected folder:', this.querySelector('.folder-name').textContent);
+            // });
+        // });
+    // }
+	
+	// Function to setup folder selection with path tracking
+	function setupFolderSelection() {
+		// Get all folder headers
+		const folderHeaders = document.querySelectorAll('.folder-header');
+		
+		folderHeaders.forEach(header => {
+			header.addEventListener('click', function(e) {
+				// Set this as the last selected folder
+				lastSelectedFolder = this.parentNode;
+				
+				// Update current path
+				updatePathFromSelection(this);
+				
+				// Visual indication that this folder is selected
+				document.querySelectorAll('.folder-header.selected').forEach(el => {
+					el.classList.remove('selected');
+				});
+				this.classList.add('selected');
+				
+				console.log('Selected folder:', this.querySelector('.folder-name').textContent);
+				console.log('Current path:', currentPath.join('/'));
+			});
+		});
+	}
+	
+	// Function to update the current path based on selected folder
+	function updatePathFromSelection(selectedHeader) {
+		// Reset path
+		currentPath = [];
+		
+		// Start from the selected element and go up the DOM tree
+		let current = selectedHeader;
+		let folderName;
+		
+		// Track path from current folder up to root
+		while (current) {
+			// Check if this is a folder header
+			if (current.classList && current.classList.contains('folder-header')) {
+				folderName = current.querySelector('.folder-name');
+				if (folderName) {
+					// Add folder name to the beginning of the path
+					currentPath.unshift(folderName.textContent);
+				}
+			}
+			
+			// Move to parent
+			current = current.parentNode;
+			
+			// Stop when we reach the file-tree or body
+			if (current.classList && (current.classList.contains('file-tree') || current === document.body)) {
+				break;
+			}
+		}
+		
+		// If we're at the root folder, adjust path
+		if (currentPath.length === 1 && currentPath[0] === 'your_files') {
+			currentPath = [];
+		}
+	}
     
     // Function to open the create modal
     function openCreateModal(type) {
@@ -734,11 +794,16 @@ document.addEventListener('DOMContentLoaded', function () {
             extension: extension
         };
         
+		// Generate the full path for the new file
+		const filePath = [...currentPath, name].join('/');
+		
         // Add file to the appropriate location in the file structure
         addToFileStructure(newFile);
         
-        console.log(`New file created: ${name}`);
-       
+        console.log(`New file created: ${name} at path: ${filePath}`);
+		
+		// Send the file creation info to the server
+		sendFileCreationToServer('file', name, filePath);
 		
         // Here you would typically send this information to the server
         // This is the empty function mentioned in your requirements
@@ -752,12 +817,18 @@ document.addEventListener('DOMContentLoaded', function () {
             name: name,
             children: []
         };
+		
+		// Generate the full path for the new folder
+		const folderPath = [...currentPath, name].join('/');
         
         // Add folder to the appropriate location in the file structure
         addToFileStructure(newFolder);
         
-        console.log(`New folder created: ${name}`);
+        console.log(`New folder created: ${name} at path: ${folderPath}`);
         
+		// Send the folder creation info to the server
+		sendFileCreationToServer('folder', name, folderPath);
+		
         // Here you would typically send this information to the server
         // This is the empty function mentioned in your requirements
         // For now we'll just log it
@@ -806,6 +877,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 	
+	// Function to send file/folder creation info to the server
+	function sendFileCreationToServer(type, name, path) {
+		// Format the message for the server
+		const creationMessage = `CREA~${JSON.stringify({
+			type: type,
+			name: name,
+			path: path
+		})}`;
+		
+		// Send to server through the WebSocket
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(creationMessage);
+			console.log(`Creation data sent to server: ${type} - ${path}`);
+		} else {
+			console.error('WebSocket not connected');
+			alert(`Unable to create ${type}: Server connection not available`);
+		}
+	}
+
+	// When opening a folder for the first time, initialize the path
+	document.querySelector('.root-folder > .folder-header').addEventListener('click', function(e) {
+		// Reset path since we're clicking the root
+		currentPath = [];
+		console.log('Root folder selected, path reset to: []');
+	});
 	
 	
 	// Sample file structure (in a real app, this would come from the server)

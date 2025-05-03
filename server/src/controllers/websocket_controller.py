@@ -1,3 +1,4 @@
+import websockets
 import asyncio
 import json
 import protocol
@@ -39,30 +40,40 @@ def login_user(email: str, password: str) -> str | bool:
 
 
 class Server:
+    def __init__(self):
+        self.clients: dict = {}  # websocket -> email
 
-    def __init__(self, ip="localhost", port=8765):
-        self.ip = ip
-        self.port = port
-        self.websocket = None
+    async def handle_client(self, websocket):
+        client_ip, client_port = websocket.remote_address
+        print(f"\nNew Client connected. ({client_ip}, {client_port})")
+        handler = ClientHandler(websocket, self)
+        await handler.handle()
 
-    async def run_script(self, data):
+    def register_logged_user(self, websocket, email):
+        self.clients[websocket] = email
 
-        code = (json.loads(data))['code']
-        
-        with open('script.py', 'w') as file:
-            file.write(code)
+    def unregister_user(self, websocket):
+        self.clients.pop(websocket, None)
 
-        process = await asyncio.create_subprocess_exec(
-            'python', '-u', 'script.py',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
-        )
 
-        async for line in process.stdout:
-            print(line.decode())
-            await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
-        
-        await process.wait()
+class ClientHandler:
+    def __init__(self, websocket, server):
+        self.websocket = websocket
+        self.server: Server = server  # reference to the main server (for shared state)
+        self.email = None  # will be set after login
+
+    async def handle(self):
+        try:
+            while True:
+                msg = await self.websocket.recv()
+                print(f"Received from client: {msg}")
+                response = await self.handle_request(msg)
+                if response:
+                    await self.websocket.send(response)
+        except websockets.exceptions.ConnectionClosed:
+            print(f"Client disconnected: {self.email or 'unknown'}")
+        finally:
+            self.server.unregister_user(self.websocket)
 
     def server_create_response(self, request, data):
 
@@ -84,47 +95,56 @@ class Server:
         
         return to_send
 
-    async def server_handle_request(self, request: str):
+    async def handle_request(self, msg: str):
         
-        request_fields = request.split('~')
-        request_code: str = request_fields[0]
-        request_data: list = request_fields[1:]
+        fields = msg.split('~')
+        code: str = fields[0]
+        data: list = fields[1:]
 
         to_send = ''
 
         try:
-            if request_code == protocol.CODE_REGISTER:
-                email, password = request_data
+            if code == protocol.CODE_REGISTER:
+                email, password = data
                 res = register_user(email, password)
-                to_send = self.server_create_response(request_code, res)
+                to_send = self.server_create_response(code, res)
             
-            elif request_code == protocol.CODE_LOGIN:
-                email, password = request_data
+            elif code == protocol.CODE_LOGIN:
+                email, password = data
                 res = login_user(email, password)
-                to_send = self.server_create_response(request_code, res)
+                if res:
+                    self.server.register_logged_user(self.websocket, email)
+                    self.email = email
+                to_send = self.server_create_response(code, res)
 
-            elif request_code == protocol.CODE_RUN_SCRIPT:
-                await self.run_script(request_data[0])
+            elif code == protocol.CODE_RUN_SCRIPT:
+                await self.run_script(data[0])
+
+            elif code == protocol.CODE_STORAGE_ADD:
+                pass
         
         except Exception as e:
             print(f"Error: {e}")
             print(traceback.format_exc())
 
         return to_send
-                    
-    async def handle_client(self, websocket):
 
-        self.websocket = websocket
 
-        client_ip, client_port = self.websocket.remote_address
-        print(f"\nNew Client connected. ({client_ip}, {client_port})")
-        
-        while True:
-            msg = await self.websocket.recv()
-            print(f"server Recieved: {msg}")
+    async def run_script(self, data):
+
+            code = (json.loads(data))['code']
             
-            response = await self.server_handle_request(msg)
-            print("response:", response)
-            if response:
-                await self.websocket.send(response)
-                print(f"Server Sent: {response}")
+            with open('script.py', 'w') as file:
+                file.write(code)
+
+            process = await asyncio.create_subprocess_exec(
+                'python', '-u', 'script.py',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+
+            async for line in process.stdout:
+                print(line.decode())
+                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
+            
+            await process.wait()
