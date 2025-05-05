@@ -601,7 +601,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		fileItem.className = 'file-item';
 		
 		const fileIcon = document.createElement('i');
-		fileIcon.className = getFileIcon(file.extension);
+		// Make sure the file extension is correctly extracted and passed to getFileIcon
+		const extension = file.extension || (file.name.includes('.') ? file.name.split('.').pop() : '');
+		fileIcon.className = getFileIcon(extension);
 		
 		const fileName = document.createElement('span');
 		fileName.className = 'file-name';
