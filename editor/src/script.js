@@ -147,8 +147,20 @@ document.addEventListener('DOMContentLoaded', function () {
 		// Clear output window content
 		clearOutput();
 		
-		const toSend = `EXEC~${JSON.stringify({ code })}`
-        socket.send(toSend);
+        // Check if user is logged in and has a current file open
+        if (currentFile && document.getElementById('user-email-display')) {
+            // First save the current file
+            saveCurrentFile();
+            
+            // Then send the RUNF command with the file path
+            const toSend = `RUNF~${currentFile.path}`;
+            console.log(`Running file: ${currentFile.path}`);
+            socket.send(toSend);
+        } else {
+            // User not logged in or no file is open, use the original EXEC command
+            const toSend = `EXEC~${JSON.stringify({ code })}`;
+            socket.send(toSend);
+        }
     }
 
     // Run button click event
