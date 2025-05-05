@@ -12,4 +12,4 @@ USER sandboxuser
 WORKDIR /home/sandboxuser/app
 
 # Entrypoint for running user's code
-ENTRYPOINT ["python3", "main.py"]
+ENTRYPOINT ["python3", "-u", "main.py"]

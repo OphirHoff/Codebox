@@ -13,6 +13,7 @@ import traceback
 db = database.Database()
 SCRIPT = "script.py"
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
+EXECUTION_MAX_TIME = 60  # seconds
 
 class Server:
     def __init__(self):
@@ -51,7 +52,7 @@ class ClientHandler:
         finally:
             self.server.unregister_user(self.websocket)
 
-    def server_create_response(self, request, data):
+    def server_create_response(self, request, data, error=None):
 
         if request == protocol.CODE_REGISTER:
             if data:  # Registration succeeded
@@ -79,8 +80,11 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
         elif request == protocol.CODE_RUN_SCRIPT or request == protocol.CODE_RUN_FILE:
-            serialized_data = { 'output' : data }
-            to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
+            if data:
+                serialized_data = { 'output' : data }
+                to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
+            else:
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_EXECUTION_FAILED}"
         
         return to_send
 
@@ -114,7 +118,7 @@ class ClientHandler:
                 to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"]))
 
             elif code == protocol.CODE_RUN_FILE:
-                to_send = self.server_create_response(code, self.run_from_storage(data[0]))
+                await self.run_from_storage(data[0])
             
             elif code == protocol.CODE_RUN_SCRIPT:
                 await self.run_script(data[0])
@@ -145,12 +149,11 @@ class ClientHandler:
             )
 
             async for line in process.stdout:
-                print(line.decode())
                 await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
             
             await process.wait()
 
-    def run_from_storage(self, path: str):
+    async def run_from_storage(self, path: str):
         
         user_id = db.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
@@ -164,9 +167,17 @@ class ClientHandler:
             "python_runner"
         ]
         
-        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
-        return result.stdout + result.stderr
-    
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        
+        async for line in process.stdout:
+                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
+            
+        await process.wait()
+
 
 def register_user(email: str, password: str) -> bool:
     regi_success = db.add_user(email, password)

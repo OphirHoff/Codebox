@@ -21,11 +21,15 @@ CODE_ERROR = 'ERRR'
 101: Login failed
 102: User already exists (taken email address in registration)
 201: File Was not found in the system
+202: Execution Failed
+203: Execution exeeded max run time
 '''
 ERROR_GENERAL = '001'
 ERROR_LOGIN_FAILED = '101'
 ERROR_USER_EXIST = '102'
 ERROR_FILE_NOT_FOUND = '201'
+ERROR_EXECUTION_FAILED = '202'
+ERROR_EXECUTION_TIMEOUT = '203'
 
 class JsonEntries:
 
