@@ -525,32 +525,132 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+		
+	// Function to save the current expanded state of folders
+	function saveExpandedFolderState() {
+		const expandedFolders = [];
+		document.querySelectorAll('.folder-header:not(.collapsed)').forEach(header => {
+			const path = buildPathFromFolderHeader(header);
+			expandedFolders.push(path.join('/'));
+		});
+		return expandedFolders;
+	}
 
+	// Function to build path from a folder header element
+	function buildPathFromFolderHeader(header) {
+		const path = [];
+		
+		// Get folder name
+		const folderName = header.querySelector('.folder-name').textContent;
+		if (folderName !== 'your_files') {
+			path.push(folderName);
+		}
+		
+		// Get parent folders
+		let current = header.parentNode;
+		while (current) {
+			if (current.classList && current.classList.contains('folder-item')) {
+				const parentHeader = current.parentNode.parentNode.querySelector(':scope > .folder-header');
+				if (parentHeader) {
+					const parentName = parentHeader.querySelector('.folder-name');
+					if (parentName && parentName.textContent !== 'your_files') {
+						path.unshift(parentName.textContent);
+					}
+				}
+			}
+			
+			// Move up to parent folder
+			if (current.parentNode && 
+				current.parentNode.classList && 
+				current.parentNode.classList.contains('folder-contents')) {
+				current = current.parentNode.parentNode;
+			} else {
+				break;
+			}
+		}
+		
+		return path;
+	}
+
+	// Function to restore expanded state after rebuilding the tree
+	function restoreExpandedFolderState(expandedFolders) {
+		expandedFolders.forEach(folderPath => {
+			if (!folderPath) return; // Skip empty paths
+			
+			const pathParts = folderPath.split('/');
+			let currentElement = document.querySelector('.root-folder');
+			
+			// Traverse the path to find the folder
+			for (const part of pathParts) {
+				if (!currentElement) break;
+				
+				// Find child folder with matching name
+				const folderHeader = Array.from(
+					currentElement.querySelectorAll(':scope > .folder-contents > .folder-item > .folder-header')
+				).find(header => 
+					header.querySelector('.folder-name').textContent === part
+				);
+				
+				if (folderHeader) {
+					// Expand this folder
+					folderHeader.classList.remove('collapsed');
+					const folderContents = folderHeader.parentNode.querySelector('.folder-contents');
+					if (folderContents) {
+						folderContents.classList.remove('hidden');
+					}
+					
+					// Update folder icon
+					const folderIcon = folderHeader.querySelector('.fa-folder, .fa-folder-open');
+					if (folderIcon) {
+						folderIcon.className = 'fas fa-folder-open';
+					}
+					
+					// Update chevron direction
+					const chevron = folderHeader.querySelector('.folder-toggle');
+					if (chevron) {
+						chevron.style.transform = 'rotate(0deg)';
+					}
+					
+					// Move to next level
+					currentElement = folderHeader.parentNode;
+				} else {
+					break;
+				}
+			}
+		});
+	}
+	
     // Function to create a dynamic file tree from the fileStructure array
     function populateFileTree() {
-        const rootContents = document.querySelector('.root-folder > .folder-contents');
-        if (!rootContents) return;
-        
-        // Clear existing content
-        rootContents.innerHTML = '';
-        
-        // Add file structure
-        fileStructure.forEach(item => {
-            if (item.type === 'folder') {
-                const folderItem = createFolderItem(item);
-                rootContents.appendChild(folderItem);
-            } else {
-                const fileItem = createFileItem(item);
-                rootContents.appendChild(fileItem);
-            }
-        });
-        
-        // Setup folder toggling for newly created elements
-        setupFolderToggling();
-        
-        // Setup folder selection for newly created elements
-        setupFolderSelection();
-    }
+		// Save current expanded state before rebuilding
+		const expandedFolders = saveExpandedFolderState();
+		
+		const rootContents = document.querySelector('.root-folder > .folder-contents');
+		if (!rootContents) return;
+		
+		// Clear existing content
+		rootContents.innerHTML = '';
+		
+		// Add file structure
+		fileStructure.forEach(item => {
+			if (item.type === 'folder') {
+				const folderItem = createFolderItem(item);
+				rootContents.appendChild(folderItem);
+			} else {
+				const fileItem = createFileItem(item);
+				rootContents.appendChild(fileItem);
+			}
+		});
+		
+		// Setup folder toggling for newly created elements
+		setupFolderToggling();
+		
+		// Setup folder selection for newly created elements
+		setupFolderSelection();
+		
+		// Restore expanded state
+		restoreExpandedFolderState(expandedFolders);
+	}
     
     // Function to create a folder item
     function createFolderItem(folder) {
