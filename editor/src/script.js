@@ -744,6 +744,58 @@ document.addEventListener('DOMContentLoaded', function () {
 		return fileItem;
 	}
 	
+	// Function to check if a name already exists in the current directory
+	function nameExistsInCurrentDirectory(name) {
+		// Get the directory where we're trying to create the new item
+		let targetDirectory = fileStructure;
+		
+		// If we have a selected folder, find it in the file structure
+		if (lastSelectedFolder && currentPath.length > 0) {
+			// Navigate through the path to find the current directory
+			for (const segment of currentPath) {
+				// Find the folder with this name
+				const found = targetDirectory.find(item => 
+					item.type === 'folder' && item.name === segment
+				);
+				
+				if (found && found.children) {
+					targetDirectory = found.children;
+				} else {
+					// Path not found, use root directory
+					targetDirectory = fileStructure;
+					break;
+				}
+			}
+		}
+		
+		// Check if the name already exists in the target directory
+		return targetDirectory.some(item => item.name === name);
+	}
+	
+	// Helper function to find an item in the file structure by path
+	function findItemByPath(path) {
+		if (!path || path.length === 0) {
+			return fileStructure;
+		}
+		
+		let current = fileStructure;
+		
+		for (let i = 0; i < path.length; i++) {
+			const segment = path[i];
+			const found = current.find(item => 
+				item.type === 'folder' && item.name === segment
+			);
+			
+			if (found && found.children) {
+				current = found.children;
+			} else {
+				return null; // Path not found
+			}
+		}
+		
+		return current;
+	}
+	
 	// Function to load file content into editor
 	function loadFileContent(fileName, filePath) {
 		// Request file content from server
@@ -996,25 +1048,31 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Function to handle creation confirmation
     function confirmCreate() {
-        const name = createNameInput.value.trim();
-        
-        if (!name) {
-            alert('Please enter a name.');
-            return;
-        }
-        
-        if (createMode === 'file') {
-            createNewFile(name);
-        } else {
-            createNewFolder(name);
-        }
-        
-        // Hide the modal
-        createModal.classList.add('hidden');
-        
-        // Refresh the file tree
-        populateFileTree();
-    }
+		const name = createNameInput.value.trim();
+		
+		if (!name) {
+			alert('Please enter a name.');
+			return;
+		}
+		
+		// Check if the name already exists in the current directory
+		if (nameExistsInCurrentDirectory(name)) {
+			alert(`A file or folder with the name "${name}" already exists in this directory.`);
+			return;
+		}
+		
+		if (createMode === 'file') {
+			createNewFile(name);
+		} else {
+			createNewFolder(name);
+		}
+		
+		// Hide the modal
+		createModal.classList.add('hidden');
+		
+		// Refresh the file tree while maintaining expanded state
+		populateFileTree();
+	}
     
     // Function to create a new file in the selected folder
 	function createNewFile(name) {
