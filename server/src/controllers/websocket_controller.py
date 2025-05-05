@@ -1,6 +1,7 @@
 import websockets
 import asyncio
 import subprocess
+import os
 import json
 import protocol
 from db import database
@@ -77,7 +78,7 @@ class ClientHandler:
             else:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
-        elif request == protocol.CODE_RUN_SCRIPT:
+        elif request == protocol.CODE_RUN_SCRIPT or request == protocol.CODE_RUN_FILE:
             serialized_data = { 'output' : data }
             to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
         
@@ -112,6 +113,9 @@ class ClientHandler:
                 data: dict = json.loads(data[0])
                 to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"]))
 
+            elif code == protocol.CODE_RUN_FILE:
+                to_send = self.server_create_response(code, self.run_from_storage(data[0]))
+            
             elif code == protocol.CODE_RUN_SCRIPT:
                 await self.run_script(data[0])
 
@@ -146,7 +150,7 @@ class ClientHandler:
             
             await process.wait()
 
-    async def run_from_storage(self, path: str):
+    def run_from_storage(self, path: str):
         
         user_id = db.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
@@ -156,11 +160,12 @@ class ClientHandler:
             "--memory=128m",
             "--pids-limit=64",
             "--network", "none",
-            "-v", f"{user_path}:{SANDBOX_WORKDIR}:ro",
-            "python-runner"
+            "-v", f"{os.path.abspath(user_path)}:{SANDBOX_WORKDIR}:ro",
+            "python_runner"
         ]
+        
         result = subprocess.run(command, capture_output=True, text=True, timeout=10)
-        return result.stdout  # , result.stderr
+        return result.stdout + result.stderr
     
 
 def register_user(email: str, password: str) -> bool:
