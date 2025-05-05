@@ -164,7 +164,8 @@ class ClientHandler:
             "--pids-limit=64",
             "--network", "none",
             "-v", f"{os.path.abspath(user_path)}:{SANDBOX_WORKDIR}:ro",
-            "python_runner"
+            "python_runner",
+            "python3", "-u", path
         ]
         
         process = await asyncio.create_subprocess_exec(

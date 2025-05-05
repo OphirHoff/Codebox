@@ -1,3 +1,3 @@
-import try
+import helper
 
-print("hello world!")
+helper.func()

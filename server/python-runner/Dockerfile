@@ -10,6 +10,3 @@ USER sandboxuser
 
 # Working directory inside the container
 WORKDIR /home/sandboxuser/app
-
-# Entrypoint for running user's code
-ENTRYPOINT ["python3", "-u", "main.py"]
