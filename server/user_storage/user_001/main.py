@@ -1,5 +1,1 @@
-print("attempt no. 1")
-
-print("goodbye")
-
-hello
+print("hello world!")

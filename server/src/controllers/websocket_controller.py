@@ -1,5 +1,6 @@
 import websockets
 import asyncio
+import subprocess
 import json
 import protocol
 from db import database
@@ -10,6 +11,7 @@ import traceback
 # Globals
 db = database.Database()
 SCRIPT = "script.py"
+SANDBOX_WORKDIR = '/home/sandboxuser/app'
 
 class Server:
     def __init__(self):
@@ -144,6 +146,22 @@ class ClientHandler:
             
             await process.wait()
 
+    async def run_from_storage(self, path: str):
+        
+        user_id = db.get_user_id(self.email)
+        user_path = user_file_manager.user_folder_name(user_id)
+        command = [
+            "docker", "run", "--rm",
+            "--cpus=0.5",
+            "--memory=128m",
+            "--pids-limit=64",
+            "--network", "none",
+            "-v", f"{user_path}:{SANDBOX_WORKDIR}:ro",
+            "python-runner"
+        ]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        return result.stdout  # , result.stderr
+    
 
 def register_user(email: str, password: str) -> bool:
     regi_success = db.add_user(email, password)

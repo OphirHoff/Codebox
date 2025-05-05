@@ -1,5 +1,5 @@
 import time
 
-for i in range(3):
-    print(f"hi {i}")
+for i in range(5):
+    print('hi')
     time.sleep(2)
