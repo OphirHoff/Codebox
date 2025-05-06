@@ -112,11 +112,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			codeInput.disabled = false;
 			fileContentChanged = false;
 			updateLineNumbers();
-			
-			    // Make sure file display is updated if it wasn't already
-			if (currentFile) {
-				updateCurrentFileDisplay(currentFile.name);
-			}
 		}
 		else if (response_code == 'SAVR') {
 			alert("File was saved successfuly!");
@@ -815,7 +810,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			codeInput.disabled = true;
 			
 			// Update file display with the current file name
-			updateCurrentFileDisplay(fileName);
+			updateCurrentFileDisplay(fileName, filePath);
+			
+			// Close "Files" sidebar
+			closeSidebar();
+			
 		} else {
 			console.error('WebSocket not connected');
 			alert('Unable to load file: Server connection not available');
@@ -823,12 +822,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 	
 	// Function to show and update the current file display
-	function updateCurrentFileDisplay(fileName) {
+	function updateCurrentFileDisplay(fileName, filePath) {
 		const currentFileDisplay = document.getElementById('current-file-display');
 		const currentFileName = document.getElementById('current-file-name');
 		
-		if (fileName) {
-			currentFileName.textContent = fileName;
+		if (filePath) {
+			currentFileName.textContent = filePath.replace(/\//g, "\\");  // Replace '/' with '\'
 			currentFileDisplay.classList.remove('hidden');
 			
 			// Update the icon based on file extension
