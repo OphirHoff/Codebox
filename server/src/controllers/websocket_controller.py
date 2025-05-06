@@ -139,18 +139,27 @@ class ClientHandler:
 
             code = (json.loads(data))['code']
             
-            with open('script.py', 'w') as file:
-                file.write(code)
-
+            command = [
+                "docker", "run", "--rm",
+                "--cpus=0.5",
+                "--memory=128m",
+                "--pids-limit=64",
+                "--network", "none",
+                "python_runner",
+                "/bin/bash", "-c",
+                f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
+                
+            ]
+            
             process = await asyncio.create_subprocess_exec(
-                'python', '-u', 'script.py',
+                *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT
             )
-
-            async for line in process.stdout:
-                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
             
+            async for line in process.stdout:
+                    await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
+                
             await process.wait()
 
     async def run_from_storage(self, path: str):
