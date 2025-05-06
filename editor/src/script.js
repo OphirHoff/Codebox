@@ -1136,6 +1136,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			return;
 		}
 		
+		if (!name.includes('.') || name.lastIndexOf('.') == name.length - 1) {
+			alert('File name must contain extension.');
+			return;
+		}
+		
 		// Check if the name already exists in the current directory
 		if (nameExistsInCurrentDirectory(name)) {
 			alert(`A file or folder with the name "${name}" already exists in this directory.`);
@@ -1157,13 +1162,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Function to create a new file in the selected folder
 	function createNewFile(name) {
-		// Determine file extension or use txt as default
-		let extension = 'txt';
-		if (name.includes('.')) {
-			extension = name.split('.').pop();
-		} else {
-			name = name + '.txt';  // Add default extension if none provided
-		}
+
+		extension = name.split('.').pop();
 		
 		const newFile = {
 			type: 'file',
