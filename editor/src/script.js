@@ -112,6 +112,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			codeInput.disabled = false;
 			fileContentChanged = false;
 			updateLineNumbers();
+			
+			    // Make sure file display is updated if it wasn't already
+			if (currentFile) {
+				updateCurrentFileDisplay(currentFile.name);
+			}
 		}
 		else if (response_code == 'SAVR') {
 			alert("File was saved successfuly!");
@@ -808,9 +813,32 @@ document.addEventListener('DOMContentLoaded', function () {
 			// Show loading indicator in editor
 			codeInput.value = `# Loading ${fileName}...`;
 			codeInput.disabled = true;
+			
+			// Update file display with the current file name
+			updateCurrentFileDisplay(fileName);
 		} else {
 			console.error('WebSocket not connected');
 			alert('Unable to load file: Server connection not available');
+		}
+	}
+	
+	// Function to show and update the current file display
+	function updateCurrentFileDisplay(fileName) {
+		const currentFileDisplay = document.getElementById('current-file-display');
+		const currentFileName = document.getElementById('current-file-name');
+		
+		if (fileName) {
+			currentFileName.textContent = fileName;
+			currentFileDisplay.classList.remove('hidden');
+			
+			// Update the icon based on file extension
+			const fileIcon = currentFileDisplay.querySelector('i');
+			if (fileIcon) {
+				const extension = fileName.includes('.') ? fileName.split('.').pop() : '';
+				fileIcon.className = getFileIcon(extension);
+			}
+		} else {
+			currentFileDisplay.classList.add('hidden');
 		}
 	}
 

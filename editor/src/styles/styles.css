@@ -1076,3 +1076,23 @@ textarea#gravity-code:disabled {
     color: #999;
     cursor: wait;
 }
+
+.current-file-display {
+    padding: 8px 12px;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Poppins', sans-serif;
+    color: #e0e0e0;
+    border-radius: 8px;
+}
+
+.current-file-display i {
+    color: #64b5f6;
+}
+
+.current-file-display.hidden {
+    display: none;
+}
