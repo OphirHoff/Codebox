@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	});
 	
+	// Auto-resize editor when window size changes
+	window.addEventListener('resize', () => {
+		if (editor) {
+			editor.layout();
+		}
+	});
+	
     // Simulate loading sequence
     setTimeout(() => {
         loadingContainer.classList.add('hidden');
