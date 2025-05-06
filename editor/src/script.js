@@ -31,7 +31,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const createNameInput = document.getElementById('create-name-input');
     const cancelCreateBtn = document.getElementById('cancel-create-btn');
     const confirmCreateBtn = document.getElementById('confirm-create-btn');
+	
+	require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
+	require(['vs/editor/editor.main'], function () {
+		monaco.editor.create(document.getElementById('editor'), {
+			value: `def hello():\n    print("Hello from Monaco!")`,
+			language: 'python',
+			theme: 'vs-dark'
+		});
+	});
+	
     // Simulate loading sequence
     setTimeout(() => {
         loadingContainer.classList.add('hidden');
