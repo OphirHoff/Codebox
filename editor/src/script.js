@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			updateLineNumbers();
 		}
 		else if (response_code == 'SAVR') {
-			alert("File was saved successfuly!");
+			showNotification("File was saved successfully!", 'success');
 		}
 		else if (response_code == 'OUTP') {
 			let runOutputData = JSON.parse(data[0]);
@@ -898,6 +898,67 @@ document.addEventListener('DOMContentLoaded', function () {
 			console.error('WebSocket not connected');
 			alert('Unable to save file: Server connection not available');
 		}
+	}
+	
+	// Create the notification container if it doesn't exist
+	function createNotificationContainer() {
+		// Check if the container already exists
+		if (document.getElementById('notification-container')) {
+			return;
+		}
+		
+		// Create notification container
+		const notificationContainer = document.createElement('div');
+		notificationContainer.id = 'notification-container';
+		notificationContainer.className = 'notification-container';
+		document.body.appendChild(notificationContainer);
+	}
+
+	// Function to show notification
+	function showNotification(message, type = 'success') {
+		// Create container if it doesn't exist
+		createNotificationContainer();
+		
+		// Create notification element
+		const notification = document.createElement('div');
+		notification.className = `notification ${type}`;
+		
+		// Create icon based on notification type
+		const icon = document.createElement('i');
+		if (type === 'success') {
+			icon.className = 'fas fa-check-circle';
+		} else if (type === 'error') {
+			icon.className = 'fas fa-exclamation-circle';
+		} else if (type === 'info') {
+			icon.className = 'fas fa-info-circle';
+		}
+		
+		// Create message text
+		const text = document.createElement('span');
+		text.textContent = message;
+		
+		// Add elements to notification
+		notification.appendChild(icon);
+		notification.appendChild(text);
+		
+		// Add to container
+		const container = document.getElementById('notification-container');
+		container.appendChild(notification);
+		
+		// Trigger animation
+		setTimeout(() => {
+			notification.classList.add('show');
+		}, 10);
+		
+		// Remove after delay
+		setTimeout(() => {
+			notification.classList.remove('show');
+			setTimeout(() => {
+				if (notification.parentNode === container) {
+					container.removeChild(notification);
+				}
+			}, 300); // Wait for fade out animation
+		}, 3000);
 	}
     
     // Get file icon based on extension
