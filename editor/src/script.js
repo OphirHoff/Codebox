@@ -379,34 +379,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    authForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = emailInput.value;
-        const password = passwordInput.value;
-    
-        // Validate inputs
-		if (!email || !password) {
-			alert('Please enter both email and password');
-			return;
-		}
-		
-		// Create the login message in the required format
-		const loginMessage = `LOGN~${email}~${password}`;
-		
-		// Send to server through the existing WebSocket
-		if (socket && socket.readyState === WebSocket.OPEN) {
-			socket.send(loginMessage);
-			
-			console.log('Login data sent:', loginMessage);
-			authModal.classList.add('hidden');
-		} else {
-			console.error('WebSocket not connected');
-			alert('Unable to login: Server connection not available');
-		}
-    });
-
     // Event listener for the Register button
-    registerBtn.addEventListener('click', (e) => {
+    authForm.addEventListener('submit', (e) => {
 		e.preventDefault(); // Prevent form submission
 		
 		const email = emailInput.value;
@@ -419,16 +393,35 @@ document.addEventListener('DOMContentLoaded', function () {
 			return;
 		}
 		
-		// Create the registration message in the required format
-		const registrationMessage = `REGI~${email}~${password}`;
+		// Determine if this is a Login or Register action
+		const isRegister = e.submitter?.classList.contains('register-btn');
 		
-		// Send to server through the existing WebSocket
-		if (socket && socket.readyState === WebSocket.OPEN) {
-			socket.send(registrationMessage);
-			console.log('Registration data sent:', registrationMessage);
+		if (isRegister) {
+			// Create the registration message in the required format
+			const registrationMessage = `REGI~${email}~${password}`;
+			
+			// Send to server through the existing WebSocket
+			if (socket && socket.readyState === WebSocket.OPEN) {
+				socket.send(registrationMessage);
+				console.log('Registration data sent:', registrationMessage);
+			} else {
+				console.error('WebSocket not connected');
+				alert('Unable to register: Server connection not available');
+			}
 		} else {
-			console.error('WebSocket not connected');
-			alert('Unable to register: Server connection not available');
+			// Create the login message in the required format
+			const loginMessage = `LOGN~${email}~${password}`;
+			
+			// Send to server through the existing WebSocket
+			if (socket && socket.readyState === WebSocket.OPEN) {
+				socket.send(loginMessage);
+				
+				console.log('Login data sent:', loginMessage);
+				authModal.classList.add('hidden');
+			} else {
+				console.error('WebSocket not connected');
+				alert('Unable to login: Server connection not available');
+			}
 		}
     });
 	
