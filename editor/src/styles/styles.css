@@ -257,8 +257,8 @@ header {
 /* Editor and output container */
 #editor {
 	width: 100%;
-	height: 90vh;
-	border: 1px solid #ccc;
+	height: 100%;
+	border: none;
 }
 
 .editor-container {
