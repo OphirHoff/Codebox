@@ -80,11 +80,14 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
         elif request == protocol.CODE_RUN_SCRIPT or request == protocol.CODE_RUN_FILE:
-            if data:
+            
+            execution_finished, data = data
+
+            if not execution_finished:
                 serialized_data = { 'output' : data }
                 to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
             else:
-                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_EXECUTION_FAILED}"
+                to_send = f"{protocol.CODE_RUN_END}~{data}"
         
         return to_send
 
@@ -118,10 +121,12 @@ class ClientHandler:
                 to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"]))
 
             elif code == protocol.CODE_RUN_FILE:
-                await self.run_from_storage(data[0])
+                res = await self.run_from_storage(data[0])
+                to_send = self.server_create_response(code, (True, res))
             
             elif code == protocol.CODE_RUN_SCRIPT:
-                await self.run_script(data[0])
+                res = await self.run_script(data[0])
+                to_send = self.server_create_response(code, (True, res))
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
@@ -135,37 +140,37 @@ class ClientHandler:
         return to_send
 
 
-    async def run_script(self, data):
+    async def run_script(self, data) -> bool:
 
-            code = (json.loads(data))['code']
+        code = (json.loads(data))['code']
+        
+        command = [
+            "docker", "run", "--rm",
+            "--cpus=0.5",
+            "--memory=128m",
+            "--pids-limit=64",
+            "--network", "none",
+            "python_runner",
+            "/bin/bash", "-c",
+            f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
             
-            command = [
-                "docker", "run", "--rm",
-                "--cpus=0.5",
-                "--memory=128m",
-                "--pids-limit=64",
-                "--network", "none",
-                "python_runner",
-                "/bin/bash", "-c",
-                f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
-                
-            ]
-            
-            process = await asyncio.create_subprocess_exec(
-                *command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
-            )
-            
-            async for line in process.stdout:
-                    await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
-                
-            await process.wait()
+        ]
+        
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
 
-    async def run_from_storage(self, path: str):
+        await self.stream_output(process)
+
+        return process.returncode
+
+    async def run_from_storage(self, path: str) -> bool:
         
         user_id = db.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
+        
         command = [
             "docker", "run", "--rm",
             "--cpus=0.5",
@@ -183,8 +188,14 @@ class ClientHandler:
             stderr=asyncio.subprocess.STDOUT
         )
         
+        await self.stream_output(process)
+
+        return process.returncode
+    
+    async def stream_output(self, process):
+
         async for line in process.stdout:
-                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, line.decode()))
+                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, line.decode())))
             
         await process.wait()
 

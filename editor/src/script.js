@@ -142,11 +142,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		else if (response_code == 'SAVR') {
 			showNotification("File was saved successfully!", 'success');
+			enableSaveButton();
 		}
 		else if (response_code == 'OUTP') {
 			let runOutputData = JSON.parse(data[0]);
 			runOutput = runOutputData['output'];
 			updateOutput(runOutput);
+		}
+		else if (response_code = 'DONE') {
+			let returnCode = parseInt(data[0]);
+			showExecutionStatus(returnCode);
+			enableRunButton();
+			enableSaveButton();
 		}
 		else if (response_code == 'ERRR') {
 			clearEmailPw();
@@ -160,7 +167,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		"001": "General Error (001)",
 		"101": "Login Failed (101)",
 		"102": "User already exists (102)",
-		"201": "File not found (201)"
+		"201": "File not found (201)",
+		"202": "Execution timeout (202)"
 	};
 
     // Function to send code to the server
@@ -191,7 +199,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Run button click event
-    runBtn.addEventListener('click', sendCodeToServer);
+    runBtn.addEventListener('click', () => {
+		sendCodeToServer();
+		disableRunButton();
+		disableSaveButton();
+	});
+	
+	// Function to disable Run button and show a loading throbber
+	function disableRunButton() {
+		const runBtn = document.getElementById('run-btn');
+		if (runBtn) {
+			// Save original text to restore later
+			runBtn.dataset.originalHtml = runBtn.innerHTML;
+			
+			// Replace with throbber
+			runBtn.innerHTML = '<div class="button-throbber"></div> Running...';
+			runBtn.disabled = true;
+			runBtn.classList.add('disabled');
+		}
+	}
+	
+	// Function to restore Run button to normal state
+	function enableRunButton() {
+		const runBtn = document.getElementById('run-btn');
+		if (runBtn) {
+			// Restore original content
+			if (runBtn.dataset.originalHtml) {
+				runBtn.innerHTML = runBtn.dataset.originalHtml;
+			} else {
+				runBtn.innerHTML = '<i class="fas fa-play"></i> Run';
+			}
+			
+			runBtn.disabled = false;
+			runBtn.classList.remove('disabled');
+		}
+	}
 	
 	// Initialize output window
 	output.srcdoc = `
@@ -232,6 +274,24 @@ document.addEventListener('DOMContentLoaded', function () {
 				preElement.textContent += outputText;
 			}
 		}
+	}
+	
+	const returnCodeMessages = {
+		0: "Code Execution Successful",
+		1: "Code Exited With Errors",
+		2: "Code Execution Environment Failed (Server Error)"
+	}
+	
+	// Show execution finish status
+	function showExecutionStatus(returnCode) {
+		let message;
+		if (returnCode in returnCodeMessages) {
+			message = `\n=== ${returnCodeMessages[returnCode]} ===`;
+		} else {
+			message = "\n=== Unknown error or signal ===";
+		}
+		
+		updateOutput(message);
 	}
 	
 	// Function to clear the output window
@@ -793,8 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	// Function to create and show save button
-	
-		function showSaveButton() {
+	function showSaveButton() {
 		// Remove existing save button if it exists
 		const existingSaveBtn = document.getElementById('save-btn');
 		if (existingSaveBtn) {
@@ -806,7 +865,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		saveBtn.id = 'save-btn';
 		saveBtn.className = 'save-button';
 		saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save';
-		saveBtn.addEventListener('click', saveCurrentFile);
+		
+		saveBtn.addEventListener('click', () => {
+			saveCurrentFile();
+			disableSaveButton();
+		});
 
 		// Find or create auth container
 		let authContainer = document.getElementById('auth-container');
@@ -851,6 +914,40 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 	
+	// Function to disable Save button
+	function disableSaveButton() {
+		const saveBtn = document.getElementById('save-btn');
+		if (saveBtn) {
+			// Save original text to restore later
+			saveBtn.dataset.originalHtml = saveBtn.innerHTML;
+			
+			// Replace with throbber
+			saveBtn.innerHTML = '<div class="button-throbber"></div> Saving...';
+			saveBtn.disabled = true;
+			saveBtn.classList.add('disabled');
+		}
+	}
+
+	// Function to enable Save button
+	function enableSaveButton() {
+		// Delay for animation
+		setTimeout(() => {
+			const saveBtn = document.getElementById('save-btn');
+			if (saveBtn) {
+				// Restore original content
+				if (saveBtn.dataset.originalHtml) {
+					saveBtn.innerHTML = saveBtn.dataset.originalHtml;
+				} else {
+					saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save';
+				}
+				
+				saveBtn.disabled = false;
+				saveBtn.classList.remove('disabled');
+			}
+		}, 300);
+		
+	}
+	
 	// Create the notification container if it doesn't exist
 	function createNotificationContainer() {
 		// Check if the container already exists
@@ -864,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		notificationContainer.className = 'notification-container';
 		document.body.appendChild(notificationContainer);
 	}
-
+	
 	// Function to show notification
 	function showNotification(message, type = 'success') {
 		// Create container if it doesn't exist
