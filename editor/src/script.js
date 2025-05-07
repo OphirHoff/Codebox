@@ -192,7 +192,9 @@ document.addEventListener('DOMContentLoaded', function () {
             socket.send(toSend);
         } else {
             // User not logged in or no file is open, use the original EXEC command
-            const toSend = `EXEC~${JSON.stringify({ code })}`;
+			// Code is encoded (base64)
+			let encodedScript = btoa(code);
+            const toSend = `EXEC~${JSON.stringify({ code: encodedScript })}`;
             socket.send(toSend);
         }
     }

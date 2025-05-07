@@ -146,10 +146,8 @@ class ClientHandler:
 
     async def run_script(self, data) -> bool:
 
-        # encoded_code = (json.loads(data))['code']
-        # code = decode_script(encoded_code)
-
-        code = (json.loads(data))['code']
+        encoded_code = (json.loads(data))['code']
+        code = decode_script(encoded_code)
         
         command = [
             "docker", "run", "--rm",
