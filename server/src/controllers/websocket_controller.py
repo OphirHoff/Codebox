@@ -1,6 +1,6 @@
 import websockets
 import asyncio
-import subprocess
+import base64
 import os
 import json
 import protocol
@@ -52,7 +52,7 @@ class ClientHandler:
         finally:
             self.server.unregister_user(self.websocket)
 
-    def server_create_response(self, request, data, error=None):
+    def server_create_response(self, request, data, general_error=False):
 
         if request == protocol.CODE_REGISTER:
             if data:  # Registration succeeded
@@ -88,6 +88,9 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
             else:
                 to_send = f"{protocol.CODE_RUN_END}~{data}"
+
+        if general_error:
+            to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_GENERAL}"
         
         return to_send
 
@@ -136,11 +139,15 @@ class ClientHandler:
         except Exception as e:
             print(f"Error: {e}")
             print(traceback.format_exc())
+            to_send = self.server_create_response(None, None, general_error=True)
 
         return to_send
 
 
     async def run_script(self, data) -> bool:
+
+        # encoded_code = (json.loads(data))['code']
+        # code = decode_script(encoded_code)
 
         code = (json.loads(data))['code']
         
@@ -153,7 +160,6 @@ class ClientHandler:
             "python_runner",
             "/bin/bash", "-c",
             f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
-            
         ]
         
         process = await asyncio.create_subprocess_exec(
@@ -265,3 +271,5 @@ def update_user_file(email, path: str, new_content: str) -> bool:
     except FileNotFoundError:
         return False
 
+def decode_script(encoded_script):
+    return base64.b64decode(encoded_script).decode('utf-8')

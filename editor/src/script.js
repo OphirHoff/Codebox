@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			runOutput = runOutputData['output'];
 			updateOutput(runOutput);
 		}
-		else if (response_code = 'DONE') {
+		else if (response_code == 'DONE') {
 			let returnCode = parseInt(data[0]);
 			showExecutionStatus(returnCode);
 			enableRunButton();
@@ -160,11 +160,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			errorCode = data[0];
 			alert(`Error: ${errors[errorCode]}`);
 		}
-		
     });
 	
 	let errors = {
-		"001": "General Error (001)",
+		"001": "General Error (001), Try to refresh ",
 		"101": "Login Failed (101)",
 		"102": "User already exists (102)",
 		"201": "File not found (201)",
