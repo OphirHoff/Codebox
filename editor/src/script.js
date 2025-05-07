@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	require(['vs/editor/editor.main'], function () {
 		monacoEditor = monaco.editor.create(document.getElementById('editor'), {
-			value: `def hello():\n    print("Hello from Monaco!")`,
+			value: `# This is Codebox!\n# Write, Run & Save your Python code here\n# (c) Ophir Hoffman. All rights reserved.\n\nprint("Welcome to Codebox!")`,
 			language: 'python',
 			theme: 'vs-dark',
 			fontSize: fontSize
