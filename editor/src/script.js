@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const codeInput = document.getElementById('gravity-code');
     const output = document.getElementById('output');
     const runBtn = document.getElementById('run-btn');
     const increaseFontBtn = document.getElementById('increase-font');
@@ -31,7 +30,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const createNameInput = document.getElementById('create-name-input');
     const cancelCreateBtn = document.getElementById('cancel-create-btn');
     const confirmCreateBtn = document.getElementById('confirm-create-btn');
+	let monacoEditor;
+	
+	require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
+	require(['vs/editor/editor.main'], function () {
+		monacoEditor = monaco.editor.create(document.getElementById('editor'), {
+			value: `# This is Codebox!\n# Write, Run & Save your Python code here\n# (c) Ophir Hoffman. All rights reserved.\n\nprint("Welcome to Codebox!")`,
+			language: 'python',
+			theme: 'vs-dark',
+			fontSize: fontSize
+		});
+	});
+	
+	// Auto-resize editor when window size changes
+	window.addEventListener('resize', () => {
+		if (monacoEditor) {
+			monacoEditor.layout();
+		}
+	});
+	
+	// Set editor read-only
+	function disableEditor() {
+		monacoEditor.updateOptions({ readOnly: true });
+	}
+	
+	// Set editor enabled
+	function enableEditor() {
+		monacoEditor.updateOptions({ readOnly: false });
+	}
+	
     // Simulate loading sequence
     setTimeout(() => {
         loadingContainer.classList.add('hidden');
@@ -108,18 +136,24 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'FILC') {
 			let fileData = JSON.parse(data[0]);
 			let fileContent = fileData['content'];
-			codeInput.value = fileContent;
-			codeInput.disabled = false;
+			monacoEditor.setValue(fileContent);
+			enableEditor();
 			fileContentChanged = false;
-			updateLineNumbers();
 		}
 		else if (response_code == 'SAVR') {
 			showNotification("File was saved successfully!", 'success');
+			enableSaveButton();
 		}
 		else if (response_code == 'OUTP') {
 			let runOutputData = JSON.parse(data[0]);
 			runOutput = runOutputData['output'];
 			updateOutput(runOutput);
+		}
+		else if (response_code = 'DONE') {
+			let returnCode = parseInt(data[0]);
+			showExecutionStatus(returnCode);
+			enableRunButton();
+			enableSaveButton();
 		}
 		else if (response_code == 'ERRR') {
 			clearEmailPw();
@@ -133,12 +167,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		"001": "General Error (001)",
 		"101": "Login Failed (101)",
 		"102": "User already exists (102)",
-		"201": "File not found (201)"
+		"201": "File not found (201)",
+		"202": "Execution timeout (202)"
 	};
 
     // Function to send code to the server
     function sendCodeToServer() {
-        const code = codeInput.value;
+		const code = monacoEditor.getValue();
         if (code.trim() === '') {
             alert('Please write some code before running.');
             return;
@@ -164,7 +199,41 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Run button click event
-    runBtn.addEventListener('click', sendCodeToServer);
+    runBtn.addEventListener('click', () => {
+		sendCodeToServer();
+		disableRunButton();
+		disableSaveButton();
+	});
+	
+	// Function to disable Run button and show a loading throbber
+	function disableRunButton() {
+		const runBtn = document.getElementById('run-btn');
+		if (runBtn) {
+			// Save original text to restore later
+			runBtn.dataset.originalHtml = runBtn.innerHTML;
+			
+			// Replace with throbber
+			runBtn.innerHTML = '<div class="button-throbber"></div> Running...';
+			runBtn.disabled = true;
+			runBtn.classList.add('disabled');
+		}
+	}
+	
+	// Function to restore Run button to normal state
+	function enableRunButton() {
+		const runBtn = document.getElementById('run-btn');
+		if (runBtn) {
+			// Restore original content
+			if (runBtn.dataset.originalHtml) {
+				runBtn.innerHTML = runBtn.dataset.originalHtml;
+			} else {
+				runBtn.innerHTML = '<i class="fas fa-play"></i> Run';
+			}
+			
+			runBtn.disabled = false;
+			runBtn.classList.remove('disabled');
+		}
+	}
 	
 	// Initialize output window
 	output.srcdoc = `
@@ -207,6 +276,24 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 	
+	const returnCodeMessages = {
+		0: "Code Execution Successful",
+		1: "Code Exited With Errors",
+		2: "Code Execution Environment Failed (Server Error)"
+	}
+	
+	// Show execution finish status
+	function showExecutionStatus(returnCode) {
+		let message;
+		if (returnCode in returnCodeMessages) {
+			message = `\n=== ${returnCodeMessages[returnCode]} ===`;
+		} else {
+			message = "\n=== Unknown error or signal ===";
+		}
+		
+		updateOutput(message);
+	}
+	
 	// Function to clear the output window
 	function clearOutput() {
 		if (output.contentDocument) {
@@ -225,16 +312,14 @@ document.addEventListener('DOMContentLoaded', function () {
     increaseFontBtn.addEventListener('click', () => {
         if (fontSize < maxFontSize) {
             fontSize += 2;
-            codeInput.style.fontSize = `${fontSize}px`;
-            updateLineNumbers();
+			monacoEditor.updateOptions({ fontSize: fontSize });
         }
     });
 
     decreaseFontBtn.addEventListener('click', () => {
         if (fontSize > minFontSize) {
             fontSize -= 2;
-            codeInput.style.fontSize = `${fontSize}px`;
-            updateLineNumbers();
+			monacoEditor.updateOptions({ fontSize: fontSize });
         }
     });
 
@@ -250,72 +335,6 @@ document.addEventListener('DOMContentLoaded', function () {
         codeEditor.classList.remove('fullscreen');
         exitFullscreenBtn.style.display = 'none';
         fullscreenBtn.style.display = 'inline-flex';
-    });
-
-    // Update line numbers
-    function updateLineNumbers() {
-        const lines = codeInput.value.split('\n').length;
-        lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
-    }
-	
-	 // Handle tab key for indentation
-    codeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab') {
-            e.preventDefault(); // Prevent focus moving to next element
-            
-            // Get cursor position
-            const start = this.selectionStart;
-            const end = this.selectionEnd;
-            
-            // Insert 4 spaces at cursor position
-            this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-            
-            // Move cursor after the inserted tab
-            this.selectionStart = this.selectionEnd = start + 4;
-            
-            // Update line numbers
-            updateLineNumbers();
-        }
-    });
-    
-    // Auto-indent on new line (Enter key)
-    codeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            
-            const start = this.selectionStart;
-            const end = this.selectionEnd;
-            
-            // Get current line's indentation
-            const currentLine = this.value.substring(0, start).split('\n').pop();
-            const match = currentLine.match(/^(\s+)/);
-            const indent = match ? match[1] : '';
-            
-            // Check if line ends with a colon (Python blocks)
-            const endsWithColon = currentLine.trim().endsWith(':');
-            const newIndent = endsWithColon ? indent + '    ' : indent;
-            
-            // Insert new line with proper indentation
-            this.value = this.value.substring(0, start) + '\n' + newIndent + this.value.substring(end);
-            
-            // Move cursor after indentation on new line
-            this.selectionStart = this.selectionEnd = start + 1 + newIndent.length;
-            
-            // Update line numbers
-            updateLineNumbers();
-        }
-    });
-
-    // Throttle the updateLineNumbers function
-    let isThrottled = false;
-    codeInput.addEventListener('input', () => {
-        if (!isThrottled) {
-            updateLineNumbers();
-            isThrottled = true;
-            setTimeout(() => {
-                isThrottled = false;
-            }, 100);
-        }
     });
 	
 	// Clear email & password input fields
@@ -364,9 +383,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		console.log(`Displaying user email: ${email}`);
 	}
-
-    // Initial update
-    updateLineNumbers();
 
     // Auth modal functionality
     authBtn.addEventListener('click', () => {
@@ -451,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Close sidebar function
 	function closeSidebar() {
+		console.log("closing sidebar")
 		sidebar.classList.remove('open');
 		sidebarOverlay.classList.add('hidden');
 		document.body.style.overflow = 'auto'; // Re-enable scrolling
@@ -798,9 +815,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			socket.send(contentRequest);
 			console.log(`Requested content for file: ${filePath}`);
 			
-			// Show loading indicator in editor
-			codeInput.value = `# Loading ${fileName}...`;
-			codeInput.disabled = true;
+			// Show loading indicator in editor			
+			monacoEditor.setValue(`# Loading ${fileName}...`);
+			
+			disableEditor();
 			
 			// Update file display with the current file name
 			updateCurrentFileDisplay(fileName, filePath);
@@ -835,8 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	// Function to create and show save button
-	
-		function showSaveButton() {
+	function showSaveButton() {
 		// Remove existing save button if it exists
 		const existingSaveBtn = document.getElementById('save-btn');
 		if (existingSaveBtn) {
@@ -848,7 +865,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		saveBtn.id = 'save-btn';
 		saveBtn.className = 'save-button';
 		saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save';
-		saveBtn.addEventListener('click', saveCurrentFile);
+		
+		saveBtn.addEventListener('click', () => {
+			saveCurrentFile();
+			disableSaveButton();
+		});
 
 		// Find or create auth container
 		let authContainer = document.getElementById('auth-container');
@@ -877,7 +898,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	function saveCurrentFile() {
 		if (!currentFile) return;
 		
-		const fileContent = codeInput.value;
+		const fileContent = monacoEditor.getValue();
 		const saveRequest = `SAVF~${JSON.stringify({
 			path: currentFile.path,
 			content: fileContent
@@ -893,6 +914,40 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 	
+	// Function to disable Save button
+	function disableSaveButton() {
+		const saveBtn = document.getElementById('save-btn');
+		if (saveBtn) {
+			// Save original text to restore later
+			saveBtn.dataset.originalHtml = saveBtn.innerHTML;
+			
+			// Replace with throbber
+			saveBtn.innerHTML = '<div class="button-throbber"></div> Saving...';
+			saveBtn.disabled = true;
+			saveBtn.classList.add('disabled');
+		}
+	}
+
+	// Function to enable Save button
+	function enableSaveButton() {
+		// Delay for animation
+		setTimeout(() => {
+			const saveBtn = document.getElementById('save-btn');
+			if (saveBtn) {
+				// Restore original content
+				if (saveBtn.dataset.originalHtml) {
+					saveBtn.innerHTML = saveBtn.dataset.originalHtml;
+				} else {
+					saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save';
+				}
+				
+				saveBtn.disabled = false;
+				saveBtn.classList.remove('disabled');
+			}
+		}, 300);
+		
+	}
+	
 	// Create the notification container if it doesn't exist
 	function createNotificationContainer() {
 		// Check if the container already exists
@@ -906,7 +961,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		notificationContainer.className = 'notification-container';
 		document.body.appendChild(notificationContainer);
 	}
-
+	
 	// Function to show notification
 	function showNotification(message, type = 'success') {
 		// Create container if it doesn't exist
@@ -941,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		// Trigger animation
 		setTimeout(() => {
 			notification.classList.add('show');
-		}, 10);
+		}, 100);
 		
 		// Remove after delay
 		setTimeout(() => {
