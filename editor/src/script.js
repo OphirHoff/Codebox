@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const codeInput = document.getElementById('gravity-code');
     const output = document.getElementById('output');
     const runBtn = document.getElementById('run-btn');
     const increaseFontBtn = document.getElementById('increase-font');
@@ -31,23 +30,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const createNameInput = document.getElementById('create-name-input');
     const cancelCreateBtn = document.getElementById('cancel-create-btn');
     const confirmCreateBtn = document.getElementById('confirm-create-btn');
+	let monacoEditor;
 	
 	require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
 	require(['vs/editor/editor.main'], function () {
-		monaco.editor.create(document.getElementById('editor'), {
+		monacoEditor = monaco.editor.create(document.getElementById('editor'), {
 			value: `def hello():\n    print("Hello from Monaco!")`,
 			language: 'python',
-			theme: 'vs-dark'
+			theme: 'vs-dark',
+			fontSize: fontSize
 		});
 	});
 	
 	// Auto-resize editor when window size changes
 	window.addEventListener('resize', () => {
-		if (editor) {
-			editor.layout();
+		if (monacoEditor) {
+			monacoEditor.layout();
 		}
 	});
+	
+	// Set editor read-only
+	function disableEditor() {
+		monacoEditor.updateOptions({ readOnly: true });
+	}
+	
+	// Set editor enabled
+	function enableEditor() {
+		monacoEditor.updateOptions({ readOnly: false });
+	}
 	
     // Simulate loading sequence
     setTimeout(() => {
@@ -125,10 +136,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'FILC') {
 			let fileData = JSON.parse(data[0]);
 			let fileContent = fileData['content'];
-			codeInput.value = fileContent;
-			codeInput.disabled = false;
+			monacoEditor.setValue(fileContent);
+			enableEditor();
 			fileContentChanged = false;
-			updateLineNumbers();
 		}
 		else if (response_code == 'SAVR') {
 			showNotification("File was saved successfully!", 'success');
@@ -155,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to send code to the server
     function sendCodeToServer() {
-        const code = codeInput.value;
+		const code = monacoEditor.getValue();
         if (code.trim() === '') {
             alert('Please write some code before running.');
             return;
@@ -242,16 +252,14 @@ document.addEventListener('DOMContentLoaded', function () {
     increaseFontBtn.addEventListener('click', () => {
         if (fontSize < maxFontSize) {
             fontSize += 2;
-            codeInput.style.fontSize = `${fontSize}px`;
-            updateLineNumbers();
+			monacoEditor.updateOptions({ fontSize: fontSize });
         }
     });
 
     decreaseFontBtn.addEventListener('click', () => {
         if (fontSize > minFontSize) {
             fontSize -= 2;
-            codeInput.style.fontSize = `${fontSize}px`;
-            updateLineNumbers();
+			monacoEditor.updateOptions({ fontSize: fontSize });
         }
     });
 
@@ -267,72 +275,6 @@ document.addEventListener('DOMContentLoaded', function () {
         codeEditor.classList.remove('fullscreen');
         exitFullscreenBtn.style.display = 'none';
         fullscreenBtn.style.display = 'inline-flex';
-    });
-
-    // Update line numbers
-    function updateLineNumbers() {
-        const lines = codeInput.value.split('\n').length;
-        lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
-    }
-	
-	 // Handle tab key for indentation
-    codeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab') {
-            e.preventDefault(); // Prevent focus moving to next element
-            
-            // Get cursor position
-            const start = this.selectionStart;
-            const end = this.selectionEnd;
-            
-            // Insert 4 spaces at cursor position
-            this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-            
-            // Move cursor after the inserted tab
-            this.selectionStart = this.selectionEnd = start + 4;
-            
-            // Update line numbers
-            updateLineNumbers();
-        }
-    });
-    
-    // Auto-indent on new line (Enter key)
-    codeInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            
-            const start = this.selectionStart;
-            const end = this.selectionEnd;
-            
-            // Get current line's indentation
-            const currentLine = this.value.substring(0, start).split('\n').pop();
-            const match = currentLine.match(/^(\s+)/);
-            const indent = match ? match[1] : '';
-            
-            // Check if line ends with a colon (Python blocks)
-            const endsWithColon = currentLine.trim().endsWith(':');
-            const newIndent = endsWithColon ? indent + '    ' : indent;
-            
-            // Insert new line with proper indentation
-            this.value = this.value.substring(0, start) + '\n' + newIndent + this.value.substring(end);
-            
-            // Move cursor after indentation on new line
-            this.selectionStart = this.selectionEnd = start + 1 + newIndent.length;
-            
-            // Update line numbers
-            updateLineNumbers();
-        }
-    });
-
-    // Throttle the updateLineNumbers function
-    let isThrottled = false;
-    codeInput.addEventListener('input', () => {
-        if (!isThrottled) {
-            updateLineNumbers();
-            isThrottled = true;
-            setTimeout(() => {
-                isThrottled = false;
-            }, 100);
-        }
     });
 	
 	// Clear email & password input fields
@@ -381,9 +323,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		console.log(`Displaying user email: ${email}`);
 	}
-
-    // Initial update
-    updateLineNumbers();
 
     // Auth modal functionality
     authBtn.addEventListener('click', () => {
@@ -468,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Close sidebar function
 	function closeSidebar() {
+		console.log("closing sidebar")
 		sidebar.classList.remove('open');
 		sidebarOverlay.classList.add('hidden');
 		document.body.style.overflow = 'auto'; // Re-enable scrolling
@@ -815,9 +755,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			socket.send(contentRequest);
 			console.log(`Requested content for file: ${filePath}`);
 			
-			// Show loading indicator in editor
-			codeInput.value = `# Loading ${fileName}...`;
-			codeInput.disabled = true;
+			// Show loading indicator in editor			
+			monacoEditor.setValue(`# Loading ${fileName}...`);
+			
+			disableEditor();
 			
 			// Update file display with the current file name
 			updateCurrentFileDisplay(fileName, filePath);
@@ -894,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	function saveCurrentFile() {
 		if (!currentFile) return;
 		
-		const fileContent = codeInput.value;
+		const fileContent = monacoEditor.getValue();
 		const saveRequest = `SAVF~${JSON.stringify({
 			path: currentFile.path,
 			content: fileContent
@@ -958,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		// Trigger animation
 		setTimeout(() => {
 			notification.classList.add('show');
-		}, 10);
+		}, 100);
 		
 		// Remove after delay
 		setTimeout(() => {
