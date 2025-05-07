@@ -145,9 +145,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			enableSaveButton();
 		}
 		else if (response_code == 'OUTP') {
+			// Extract output from json
 			let runOutputData = JSON.parse(data[0]);
-			runOutput = runOutputData['output'];
-			updateOutput(runOutput);
+			let encodedOutput = runOutputData['output'];
+			// Decode (bsae64) output
+			let outputLine = atob(encodedOutput);
+			updateOutput(outputLine);
 		}
 		else if (response_code == 'DONE') {
 			let returnCode = parseInt(data[0]);

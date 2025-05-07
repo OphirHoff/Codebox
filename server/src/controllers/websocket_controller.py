@@ -147,7 +147,7 @@ class ClientHandler:
     async def run_script(self, data) -> bool:
 
         encoded_code = (json.loads(data))['code']
-        code = decode_script(encoded_code)
+        code = base64_decode(encoded_code)
         
         command = [
             "docker", "run", "--rm",
@@ -199,7 +199,8 @@ class ClientHandler:
     async def stream_output(self, process):
 
         async for line in process.stdout:
-                await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, line.decode())))
+            encoded_line = base64_encode(line.decode()).decode('utf-8')
+            await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
             
         await process.wait()
 
@@ -268,6 +269,10 @@ def update_user_file(email, path: str, new_content: str) -> bool:
         return True
     except FileNotFoundError:
         return False
+    
 
-def decode_script(encoded_script):
-    return base64.b64decode(encoded_script).decode('utf-8')
+def base64_encode(to_encode: str):
+    return base64.b64encode(to_encode.encode('utf-8'))
+
+def base64_decode(encoded):
+    return base64.b64decode(encoded).decode('utf-8')
