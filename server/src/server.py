@@ -9,9 +9,10 @@ PORT = 8765
 async def shutdown_signal():
     while True:
         # Use asyncio.to_thread to prevent blocking the event loop
-        if await asyncio.to_thread(keyboard.is_pressed, 'q'):
+        if await asyncio.to_thread(keyboard.is_pressed, 'ctrl+q'):
             break
-        await asyncio.sleep(0.1)  # Yield control back to event loop
+        await asyncio.sleep(0.1)  # Yield control back to event loop 
+        
 
 async def main():
 

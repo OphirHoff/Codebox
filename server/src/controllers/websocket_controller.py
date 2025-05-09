@@ -26,7 +26,7 @@ class Server:
         self.server_port = port
         self.clients: dict = {}  # websocket -> email
         self.logger = Logger()
-        Logger.configure_logger()
+        self.logger.configure_logger()
         self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_STARTED)
 
     async def handle_client(self, websocket):
@@ -61,6 +61,11 @@ class ClientHandler:
         self.logger = Logger(self.client_ip, self.client_port)
         self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
+
+        self.container_running = None  # Will be set True when container is running
+        self.process = None
+        self.pid = None
+        self.process_ready_event = asyncio.Event()
 
     async def send(self, msg: str) -> None:
         await self.websocket.send(msg)
@@ -120,6 +125,9 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
             else:
                 to_send = f"{protocol.CODE_RUN_END}~{data}"
+        
+        elif request == protocol.CODE_BLOCKED_INPUT:
+            to_send = f"{protocol.CODE_BLOCKED_INPUT}"
 
         if general_error:
             to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_GENERAL}"
@@ -175,34 +183,53 @@ class ClientHandler:
 
         return to_send
 
-
-    async def run_script(self, data) -> bool:
+    async def run_script(self, data) -> int:
 
         encoded_code = (json.loads(data))['code']
         code = base64_decode(encoded_code)
         
+        # Set container name as client's email
+        # container_name = f"{self.client_ip}-{self.client_port}"
+        container_name = "shlomi"
+
         command = [
-            "docker", "run", "--rm",
+            "docker", "run", "--cap-add=SYS_PTRACE", "-i",
+            "--rm",
             "--cpus=0.5",
             "--memory=128m",
             "--pids-limit=64",
             "--network", "none",
+            "--name", container_name,
             "python_runner",
             "/bin/bash", "-c",
             f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
         ]
         
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
+        async def run_process():
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+            self.process = process
+            await asyncio.sleep(2)
+            self.pid = await self.get_python_pid(container_name)
+            print(f"Process started with inner PID: {self.pid}")
+
+            # Signal that the process is ready
+            self.process_ready_event.set()
+
+        self.container_running = True
+
+        await asyncio.gather(
+            run_process(),
+            self.stream_output(self.process),
+            self.moniter_input_syscalls(self.pid)
         )
 
-        await self.stream_output(process)
+        return self.process.returncode
 
-        return process.returncode
-
-    async def run_from_storage(self, path: str) -> bool:
+    async def run_from_storage(self, path: str) -> int:
         
         user_id = db.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
@@ -228,13 +255,109 @@ class ClientHandler:
 
         return process.returncode
     
-    async def stream_output(self, process):
+    async def get_python_pid(self, container_name: str) -> int:
+        """
+        Use `docker exec` to retrieve the PID of the Python process inside the running container.
+        """
+        # Use `docker exec` to run `ps aux` inside the container and filter for the Python process
+        # command = f"docker exec {container_name} pgrep -f 'script.py'"
+        # command = "docker exec -d shlomi ps aux | grep 'python3 -u script.py' | grep -v 'grep' | awk '{print $2}'"
+        command = "docker exec shlomi pgrep -f script.py"
 
-        async for line in process.stdout:
-            encoded_line = base64_encode(line.decode()).decode('utf-8')
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        # Read the output from the command
+        pid = await process.stdout.readline()
+        print(pid)
+        await process.wait()
+
+        pid_str = pid.strip().decode('utf-8')  # decode bytes to string
+        if not pid_str:
+            print(f"Error: No Python PID returned for container {container_name}.")
+            return None
+
+        try:
+            return int(pid_str)  # Convert the PID string to an integer
+        except ValueError:
+            print(f"Error: Failed to convert PID '{pid_str}' to an integer.")
+            return None
+
+    async def stream_output(self, process):
+        
+        # Wait for the process to be ready before starting streaming
+        await self.process_ready_event.wait()
+
+        # async for line in self.process.stdout:
+        #     encoded_line = base64_encode(line.decode()).decode('utf-8')
+        #     await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
+
+        while True:
+            chunk = await self.process.stdout.read(1024)
+            print(chunk)
+            if not chunk:
+                break  # EOF reached
+            encoded_line = base64_encode(chunk.decode()).decode('utf-8')
             await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
             
-        await process.wait()
+        await self.process.wait()
+        self.container_running = False
+        self.process_ready_event.clear()
+    
+    async def moniter_input_syscalls(self, pid: int):
+        """
+        Asynchronously checks if the process is blocked on input from stdin.
+        """
+        # Wait for the process to be ready before starting streaming
+        await self.process_ready_event.wait()
+
+        # container_name = f"{self.client_ip}-{self.client_port}"
+        container_name = "shlomi"
+        print("in function")
+        while self.container_running:
+            # await asyncio.sleep(1)
+            command = f"docker exec {container_name} ps -o state= -p {self.pid}"
+
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            res = await process.stdout.readline()
+            print(res)
+            if res.decode().strip() == 'S':
+                await self.stream_input()
+            
+
+    async def stream_input(self):
+        """
+        Asynchronously streams input to the running container's stdin.
+        """
+        await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
+        print("WAITING FOR INPUT")
+        input = await self.recv()
+
+        container_name = "shlomi"
+
+        # Command to write to PID 1's stdin in the container
+        command = [
+            "docker", "exec", "-i", container_name,
+            "bash", "-c", "cat > /proc/1/fd/0"
+        ]
+
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        # Send the input string
+        await process.communicate(input.encode())
 
 
 def register_user(email: str, password: str) -> bool:

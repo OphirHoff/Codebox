@@ -32,13 +32,16 @@ class Logger:
         load_dotenv()
         self.LOG_TO_CONSOLE = os.getenv("PRINT_NETWORK_LOGS", "false").lower() == "true"
 
-    def configure_logger():
+    def configure_logger(self):
 
         if not os.path.exists(CONNECTION_LOG_FILE) or os.path.getsize(CONNECTION_LOG_FILE) == 0:
             with open(CONNECTION_LOG_FILE, 'w') as log_file:
                 # Write the header (column titles)
                 log_file.write(HEADER + '\n')
-        print(HEADER)
+        
+        if self.LOG_TO_CONSOLE:
+            print(HEADER)
+        
 
         logging.basicConfig(
             filename=CONNECTION_LOG_FILE,
