@@ -1,4 +1,5 @@
 import websockets
+import requests
 import asyncio
 import base64
 import os
@@ -8,21 +9,29 @@ from db import database
 from utils import user_file_manager
 import errors
 import traceback
+from utils.logger import (
+    Logger,
+    Level,
+    Event
+    )
 
 # Globals
 db = database.Database()
-SCRIPT = "script.py"
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_MAX_TIME = 60  # seconds
 
 class Server:
-    def __init__(self):
+    def __init__(self, port):
+        self.server_ip = requests.get('https://ifconfig.me').text
+        self.server_port = port
         self.clients: dict = {}  # websocket -> email
+        self.logger = Logger()
+        Logger.configure_logger()
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_STARTED)
 
     async def handle_client(self, websocket):
-        client_ip, client_port = websocket.remote_address
-        print(f"\nNew Client connected. ({client_ip}, {client_port})")
-        handler = ClientHandler(websocket, self)
+        ip, port = websocket.remote_address
+        handler = ClientHandler(websocket, ip, port, self)
         await handler.handle()
 
     def register_logged_user(self, websocket, email):
@@ -31,24 +40,47 @@ class Server:
     def unregister_user(self, websocket):
         self.clients.pop(websocket, None)
 
+    def close(self):
+
+        for sock in self.clients:
+            try:
+                sock.close()
+                self.logger.log_connection_event(Level.LEVEL_INFO, Event.CONNECTION_CLOSED, msg=sock.remote_address)
+            except websockets.exceptions.WebSocketException:
+                self.logger.log_connection_event(Level.LEVEL_ERROR, Event.DISCONNECT_FAILED, msg=sock.remote_address)
+
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_CLOSED)
+
 
 class ClientHandler:
-    def __init__(self, websocket, server):
+    def __init__(self, websocket, ip, port, server):
         self.websocket = websocket
-        self.server: Server = server  # reference to the main server (for shared state)
+        self.client_ip = ip
+        self.client_port = port
+        self.server: Server = server
+        self.logger = Logger(self.client_ip, self.client_port)
+        self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
+
+    async def send(self, msg: str) -> None:
+        await self.websocket.send(msg)
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_SENT, msg[:4])
+    
+    async def recv(self):
+        msg = await self.websocket.recv()
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_RECEIVED, msg[:4])
+        
+        return msg
 
     async def handle(self):
         try:
             while True:
-                msg = await self.websocket.recv()
-                print(f"Received: {msg}")
+                msg = await self.recv()
                 response = await self.handle_request(msg)
                 if response:
-                    await self.websocket.send(response)
-                    print(f"Sent: {response}")
+                    await self.send(response)
         except websockets.exceptions.ConnectionClosed:
-            print(f"Client disconnected: {self.email or 'unknown'}")
+            self.logger.log_connection_event(Level.LEVEL_INFO, Event.CONNECTION_CLOSED)
         finally:
             self.server.unregister_user(self.websocket)
 
@@ -200,7 +232,7 @@ class ClientHandler:
 
         async for line in process.stdout:
             encoded_line = base64_encode(line.decode()).decode('utf-8')
-            await self.websocket.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
+            await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
             
         await process.wait()
 

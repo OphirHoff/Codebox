@@ -1,6 +1,5 @@
 import sqlite3
 import pickle
-import os
 from utils import security, user_file_manager
 import db.queries as queries
 import datetime
