@@ -20,6 +20,15 @@ db = database.Database()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_MAX_TIME = 60  # seconds
 
+def user_container_id():
+
+    id = 0
+    while True:
+        id += 1
+        yield id
+
+container_id_gen = user_container_id()
+
 class Server:
     def __init__(self, port):
         self.server_ip = requests.get('https://ifconfig.me').text
@@ -62,6 +71,8 @@ class ClientHandler:
         self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
 
+        # self.container_name = f"{self.client_ip.replace('.', '-')}-{self.client_port}"
+        self.container_name = f"n-{next(container_id_gen)}"
         self.container_running = None  # Will be set True when container is running
         self.process = None
         self.pid = None
@@ -73,7 +84,7 @@ class ClientHandler:
     
     async def recv(self):
         msg = await self.websocket.recv()
-        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_RECEIVED, msg[:4])
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_RECEIVED, msg[:20])
         
         return msg
 
@@ -171,6 +182,9 @@ class ClientHandler:
                 res = await self.run_script(data[0])
                 to_send = self.server_create_response(code, (True, res))
 
+            elif code == protocol.CODE_INPUT:
+                return (json.loads(data[0]))["input"]
+
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
                 user_storage_add(self.email, data)
@@ -187,19 +201,15 @@ class ClientHandler:
 
         encoded_code = (json.loads(data))['code']
         code = base64_decode(encoded_code)
-        
-        # Set container name as client's email
-        # container_name = f"{self.client_ip}-{self.client_port}"
-        container_name = "shlomi"
 
         command = [
-            "docker", "run", "--cap-add=SYS_PTRACE", "-i",
+            "docker", "run", "-i",
             "--rm",
             "--cpus=0.5",
             "--memory=128m",
             "--pids-limit=64",
             "--network", "none",
-            "--name", container_name,
+            "--name", self.container_name,
             "python_runner",
             "/bin/bash", "-c",
             f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
@@ -211,13 +221,14 @@ class ClientHandler:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT
             )
+
             self.process = process
             await asyncio.sleep(2)
-            self.pid = await self.get_python_pid(container_name)
-            print(f"Process started with inner PID: {self.pid}")
+            self.pid = await self.get_python_pid(self.container_name)
 
             # Signal that the process is ready
             self.process_ready_event.set()
+
 
         self.container_running = True
 
@@ -235,34 +246,49 @@ class ClientHandler:
         user_path = user_file_manager.user_folder_name(user_id)
         
         command = [
-            "docker", "run", "--rm",
+            "docker", "run", "-i",
+            "--rm",
             "--cpus=0.5",
             "--memory=128m",
             "--pids-limit=64",
             "--network", "none",
             "-v", f"{os.path.abspath(user_path)}:{SANDBOX_WORKDIR}:ro",
+            "--name", self.container_name,
             "python_runner",
             "python3", "-u", path
         ]
         
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
-        )
-        
-        await self.stream_output(process)
+        async def run_process():
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
 
-        return process.returncode
+            self.process = process
+            await asyncio.sleep(2)
+            self.pid = await self.get_python_pid(self.container_name, code_path=path)
+
+            # Signal that the process is ready
+            self.process_ready_event.set()
+
+
+        self.container_running = True
+
+        await asyncio.gather(
+            run_process(),
+            self.stream_output(self.process),
+            self.moniter_input_syscalls(self.pid)
+        )
+
+        return self.process.returncode
     
-    async def get_python_pid(self, container_name: str) -> int:
+    async def get_python_pid(self, container_name: str, code_path: str = 'script.py') -> int:
         """
         Use `docker exec` to retrieve the PID of the Python process inside the running container.
         """
-        # Use `docker exec` to run `ps aux` inside the container and filter for the Python process
-        # command = f"docker exec {container_name} pgrep -f 'script.py'"
-        # command = "docker exec -d shlomi ps aux | grep 'python3 -u script.py' | grep -v 'grep' | awk '{print $2}'"
-        command = "docker exec shlomi pgrep -f script.py"
+        # Use `docker exec` to run `pgrep` to get Python execution process id
+        command = f"docker exec {container_name} pgrep -f {code_path}"
 
         process = await asyncio.create_subprocess_shell(
             command,
@@ -291,15 +317,11 @@ class ClientHandler:
         # Wait for the process to be ready before starting streaming
         await self.process_ready_event.wait()
 
-        # async for line in self.process.stdout:
-        #     encoded_line = base64_encode(line.decode()).decode('utf-8')
-        #     await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
-
         while True:
             chunk = await self.process.stdout.read(1024)
-            print(chunk)
             if not chunk:
                 break  # EOF reached
+
             encoded_line = base64_encode(chunk.decode()).decode('utf-8')
             await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
             
@@ -314,12 +336,9 @@ class ClientHandler:
         # Wait for the process to be ready before starting streaming
         await self.process_ready_event.wait()
 
-        # container_name = f"{self.client_ip}-{self.client_port}"
-        container_name = "shlomi"
-        print("in function")
         while self.container_running:
-            # await asyncio.sleep(1)
-            command = f"docker exec {container_name} ps -o state= -p {self.pid}"
+
+            command = f"docker exec {self.container_name} ps -o state= -p {self.pid}"
 
             process = await asyncio.create_subprocess_shell(
                 command,
@@ -328,7 +347,6 @@ class ClientHandler:
             )
 
             res = await process.stdout.readline()
-            print(res)
             if res.decode().strip() == 'S':
                 await self.stream_input()
             
@@ -338,14 +356,14 @@ class ClientHandler:
         Asynchronously streams input to the running container's stdin.
         """
         await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
-        print("WAITING FOR INPUT")
-        input = await self.recv()
-
-        container_name = "shlomi"
+    
+        input = await self.handle_request(await self.recv())
+        print(input)
+        # input = (json.loads(data))['input']
 
         # Command to write to PID 1's stdin in the container
         command = [
-            "docker", "exec", "-i", container_name,
+            "docker", "exec", "-i", self.container_name,
             "bash", "-c", "cat > /proc/1/fd/0"
         ]
 
@@ -355,6 +373,10 @@ class ClientHandler:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
+
+        # Make sure input ends with new-line
+        if not input.endswith('\n'):
+            input += '\n'
 
         # Send the input string
         await process.communicate(input.encode())

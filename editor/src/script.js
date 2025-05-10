@@ -460,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					// Send the input back to the server
 					const inputResponse = `INPR~${JSON.stringify({ input: userInput })}`;
 					socket.send(inputResponse);
+					console.log(`Sent: ${inputResponse}`);
 				} catch (error) {
 					console.error("Error handling input:", error);
 					// Send empty response in case of error

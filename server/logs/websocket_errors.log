@@ -1,0 +1,11 @@
+2025-05-10 04:20:13,768 | ERROR | opening handshake failed
+Traceback (most recent call last):
+  File "C:\Users\dvirh\AppData\Local\Programs\Python\Python310\lib\site-packages\websockets\asyncio\server.py", line 356, in conn_handler
+    await connection.handshake(
+  File "C:\Users\dvirh\AppData\Local\Programs\Python\Python310\lib\site-packages\websockets\asyncio\server.py", line 142, in handshake
+    async with self.send_context(expected_state=CONNECTING):
+  File "C:\Users\dvirh\AppData\Local\Programs\Python\Python310\lib\contextlib.py", line 199, in __aenter__
+    return await anext(self.gen)
+  File "C:\Users\dvirh\AppData\Local\Programs\Python\Python310\lib\site-packages\websockets\asyncio\connection.py", line 957, in send_context
+    raise self.protocol.close_exc from original_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
