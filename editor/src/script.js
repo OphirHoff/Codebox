@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('WebSocket connection established');
         if (errorMessage) errorMessage.classList.add('hidden'); // Hide error if connection succeeds
         clearTimeout(connectionTimeout); // Clear failure detection timeout
+		
+		// Initialize input handling
+		initializeInputHandling(socket);
     });
 	
 	// Handle WebSocket errors
@@ -241,28 +244,41 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	// Initialize output window
 	output.srcdoc = `
-        <html>
-            <head>
-                <style>
-                    body {
-                        background-color: #1e1e1e;
-                        color: #e0e0e0;
-                        font-family: 'Iosevka', 'Consolas', 'Courier New', monospace;
-                        font-size: 16px;
-                        margin: 0;
-                        padding: 15px;
-                    }
-                    pre {
-                        margin: 0;
-                        white-space: pre-wrap;
-                    }
-                </style>
-            </head>
-            <body class="iframe-styles">
-                <pre id="pre-text"></pre>
-            </body>
-        </html>
-    `;
+		<html>
+			<head>
+				<style>
+					body {
+						background-color: #1e1e1e;
+						color: #e0e0e0;
+						font-family: 'Iosevka', 'Consolas', 'Courier New', monospace;
+						font-size: 16px;
+						margin: 0;
+						padding: 15px;
+					}
+					pre {
+						margin: 0;
+						white-space: pre-wrap;
+					}
+					#input-area {
+						background-color: transparent;
+						color: #66FF66; /* Light green for input */
+						caret-color: #66FF66;
+					}
+					@keyframes blink {
+						0% { opacity: 1; }
+						50% { opacity: 0; }
+						100% { opacity: 1; }
+					}
+					#input-cursor {
+						animation: blink 1s step-end infinite;
+					}
+				</style>
+			</head>
+			<body class="iframe-styles">
+				<pre id="pre-text"></pre>
+			</body>
+		</html>
+	`;
     
     // Wait for iframe to load
     output.onload = function() {
@@ -306,6 +322,157 @@ document.addEventListener('DOMContentLoaded', function () {
 				preElement.textContent = ""; // Clear the content
 			}
 		}
+	}
+	
+	// Function to handle input in the output window
+	function handleInputRequest(prompt) {
+		return new Promise((resolve) => {
+			if (!output.contentDocument) {
+				console.error("Output iframe document not available");
+				resolve("");
+				return;
+			}
+			
+			const outputDoc = output.contentDocument;
+			const preElement = outputDoc.getElementById("pre-text");
+			
+			if (!preElement) {
+				console.error("Pre-text element not found in output");
+				resolve("");
+				return;
+			}
+			
+			// Display the prompt if provided
+			if (prompt) {
+				preElement.textContent += prompt;
+			}
+			
+			// Create and append the input element
+			const inputSpan = outputDoc.createElement("span");
+			inputSpan.id = "input-area";
+			inputSpan.contentEditable = true;
+			inputSpan.style.outline = "none";
+			inputSpan.style.display = "inline-block";
+			inputSpan.style.minWidth = "1px";
+			inputSpan.style.position = "relative";
+			
+			// Add cursor animation style
+			if (!outputDoc.getElementById("cursor-style")) {
+				const style = outputDoc.createElement("style");
+				style.id = "cursor-style";
+				style.textContent = `
+					@keyframes blink {
+						0% { opacity: 1; }
+						50% { opacity: 0; }
+						100% { opacity: 1; }
+					}
+					#input-area {
+						caret-color: #66FF66; /* Green cursor */
+					}
+					/* Make the entire output area clickable to focus input */
+					body {
+						cursor: text;
+					}
+					#pre-text {
+						min-height: 100vh;
+					}
+				`;
+				outputDoc.head.appendChild(style);
+			}
+			
+			// Append input area to the pre element
+			preElement.appendChild(inputSpan);
+			
+			// Focus the input area
+			inputSpan.focus();
+			
+			// Create a container for the input state
+			const inputState = {
+				active: true,
+				value: ""
+			};
+			
+			// Make the entire output area clickable to focus input
+			function focusInput(e) {
+				if (inputState.active && e.target !== inputSpan) {
+					e.preventDefault();
+					inputSpan.focus();
+				}
+			}
+			
+			// Add click event to the entire document body
+			outputDoc.body.addEventListener("click", focusInput);
+			
+			// Handle key events
+			function handleKeyDown(e) {
+				if (!inputState.active) return;
+				
+				if (e.key === "Enter") {
+					e.preventDefault();
+					
+					// Capture the entered value
+					const userInput = inputSpan.textContent || "";
+					inputState.value = userInput;
+					inputState.active = false;
+					
+					// Replace input span with the entered text
+					const textNode = outputDoc.createTextNode(userInput);
+					preElement.replaceChild(textNode, inputSpan);
+					
+					// Add new line
+					preElement.appendChild(outputDoc.createTextNode("\n"));
+					
+					// Remove event listeners
+					outputDoc.removeEventListener("keydown", handleKeyDown);
+					outputDoc.body.removeEventListener("click", focusInput);
+					
+					// Resolve the promise with the input value
+					resolve(userInput);
+				}
+			}
+			
+			// Add keydown event listener
+			outputDoc.addEventListener("keydown", handleKeyDown);
+		});
+	}
+
+	// Function to intercept Python input() calls and handle them
+	function setupInputInterception(socket) {
+		// Add a message handler for input requests
+		socket.addEventListener('message', async (event) => {
+			const msg = event.data;
+			console.log(`Received: ${msg}`);
+			
+			const fields = msg.split('~');
+			const response_code = fields[0];
+			const data = fields.slice(1);
+			
+			// Check if this is an input request
+			if (response_code === 'INPT') {
+				// Get the prompt (if any)
+				const promptData = data[0] ? JSON.parse(data[0]) : {};
+				const prompt = promptData.prompt || "";
+				
+				try {
+					// Handle the input request
+					const userInput = await handleInputRequest(prompt);
+					
+					// Send the input back to the server
+					const inputResponse = `INPR~${JSON.stringify({ input: userInput })}`;
+					socket.send(inputResponse);
+				} catch (error) {
+					console.error("Error handling input:", error);
+					// Send empty response in case of error
+					socket.send(`INPR~${JSON.stringify({ input: "" })}`);
+				}
+			}
+		});
+	}
+
+	// Initialize input handling system
+	function initializeInputHandling(socket) {
+		setupInputInterception(socket);
+		console.log("Input handling system initialized");
 	}
 	
     // Font size controls
