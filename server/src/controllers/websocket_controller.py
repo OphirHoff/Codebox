@@ -367,10 +367,10 @@ class ClientHandler:
         print(input)
         # input = (json.loads(data))['input']
 
-        # Command to write to PID 1's stdin in the container
+        # Command to write to process's stdin in the container
         command = [
             "docker", "exec", "-i", self.container_name,
-            "bash", "-c", "cat > /proc/1/fd/0"
+            "bash", "-c", f"cat > /proc/{self.pid}/fd/0"
         ]
 
         process = await asyncio.create_subprocess_exec(
