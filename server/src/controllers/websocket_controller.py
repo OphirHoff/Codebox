@@ -114,6 +114,12 @@ class ClientHandler:
             else:  # Login failed
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_LOGIN_FAILED}"
         
+        elif request == protocol.CODE_STORAGE_ADD:
+            if data:
+                to_send = protocol.CODE_STORAGE_UPDATED
+            else:
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_STORAGE_CREATE}"
+
         elif request == protocol.CODE_GET_FILE:
             if data or data == '':  # File exists (data == '' to support empty files)
                 serialized_data = { 'content' : data }
@@ -187,8 +193,8 @@ class ClientHandler:
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
-                user_storage_add(self.email, data)
-                to_send = None  # To fix - return appropriate response
+                res = user_storage_add(self.email, data)
+                to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
         
         except Exception as e:
             print(f"Error: {e}")
@@ -409,21 +415,28 @@ def login_user(email: str, password: str) -> str | bool:
         print(f"Error: {err}")
 
 
-def user_storage_add(email, new_node: str):
+def user_storage_add(email, new_node: str) -> bool:
 
     user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
 
     create_type: str = new_node[protocol.JsonEntries.NODE_TYPE]
     path: str = new_node[protocol.JsonEntries.NODE_PATH]
 
-    if create_type == user_file_manager.FileType.FILE.value:
-        user_storage.create_file(path)
-    elif create_type == user_file_manager.FileType.FOLDER.value:
-        user_storage.create_dir(path)
-    else:
-        raise errors.InvalidEntry(protocol.JsonEntries.NODE_TYPE, create_type)
+    try:
+        if create_type == user_file_manager.FileType.FILE.value:
+            user_storage.create_file(path)
+        elif create_type == user_file_manager.FileType.FOLDER.value:
+            user_storage.create_dir(path)
+        else:
+            raise errors.InvalidEntry(protocol.JsonEntries.NODE_TYPE, create_type)
+    except Exception:
+        # Storage update failed
+        return False
     
     db.set_user_files_struct(email, user_storage)
+
+    # Storage update succeeded
+    return True
 
 
 def get_user_file(email, path: str) -> str | bool:

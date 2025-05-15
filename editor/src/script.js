@@ -136,6 +136,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			alert(`Logged in. Welcome! (${emailInput.value})`);
 			clearEmailPw();
 		}
+		else if (response_code == 'CRER') {
+			showNotification("Storage updated", 'success');
+		}
 		else if (response_code == 'FILC') {
 			let fileData = JSON.parse(data[0]);
 			let fileContent = fileData['content'];
@@ -164,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'ERRR') {
 			clearEmailPw();
 			errorCode = data[0];
-			alert(`Error: ${errors[errorCode]}`);
+			DisplayError(errorCode);
 		}
     });
 	
@@ -173,8 +176,19 @@ document.addEventListener('DOMContentLoaded', function () {
 		"101": "Login Failed (101)",
 		"102": "User already exists (102)",
 		"201": "File not found (201)",
-		"202": "Execution timeout (202)"
+		"202": "Execution timeout (202)",
+		"301": "Failed to create file or folder (301)"
 	};
+	
+	function displayError(errorCode) {
+		
+		if (errorCode != '301') {
+			alert(`Error: ${errors[errorCode]}`);
+		}
+		else {
+			showNotification(errors[errorCode], 'error');
+		}
+	}
 
     // Function to send code to the server
     function sendCodeToServer() {
