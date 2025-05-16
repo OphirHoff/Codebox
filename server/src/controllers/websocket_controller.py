@@ -188,7 +188,7 @@ class ClientHandler:
                 to_send = self.server_create_response(code, (True, res))
 
             elif code == protocol.CODE_INPUT:
-                return (json.loads(data[0]))["input"]
+                return base64_decode(data[0])
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
@@ -362,7 +362,6 @@ class ClientHandler:
         await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
     
         input = await self.handle_request(await self.recv())
-        print(input)
         # input = (json.loads(data))['input']
 
         # Command to write to process's stdin in the container
