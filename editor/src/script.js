@@ -1374,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			return;
 		}
 		
-		if (!name.includes('.') || name.lastIndexOf('.') == name.length - 1) {
+		if (createMode === 'file' && !name.includes('.') || name.lastIndexOf('.') == name.length - 1) {
 			alert('File name must contain extension.');
 			return;
 		}

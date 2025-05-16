@@ -1,0 +1,24 @@
+  | Timestamp            | Level   | Event        | Client IP       | Port  | Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[-] 2025-05-16T23:33:48Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-16T23:33:49Z | INFO    | CONN_EST     | 127.0.0.1       | 41629 | N/A
+[-] 2025-05-16T23:33:53Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41629 | LOGN~blah@gmail.com~
+[-] 2025-05-16T23:33:53Z | INFO    | MSG_SENT     | 127.0.0.1       | 41629 | LOGR
+[-] 2025-05-16T23:34:55Z | INFO    | DISCONNECT   | 127.0.0.1       | 41629 | N/A
+[-] 2025-05-16T23:34:56Z | INFO    | CONN_EST     | 127.0.0.1       | 41663 | N/A
+[-] 2025-05-16T23:35:00Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41663 | LOGN~blah@gmail.com~
+[-] 2025-05-16T23:35:00Z | INFO    | MSG_SENT     | 127.0.0.1       | 41663 | LOGR
+[-] 2025-05-16T23:35:17Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41663 | CREA~{"type":"folder
+[-] 2025-05-16T23:35:18Z | INFO    | MSG_SENT     | 127.0.0.1       | 41663 | CRER
+[-] 2025-05-16T23:35:27Z | INFO    | DISCONNECT   | 127.0.0.1       | 41663 | N/A
+[-] 2025-05-16T23:35:27Z | INFO    | CONN_EST     | 127.0.0.1       | 41678 | N/A
+[-] 2025-05-16T23:35:31Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41678 | LOGN~blah@gmail.com~
+[-] 2025-05-16T23:35:31Z | INFO    | MSG_SENT     | 127.0.0.1       | 41678 | LOGR
+[-] 2025-05-16T23:35:46Z | INFO    | DISCONNECT   | 127.0.0.1       | 41678 | N/A
+[-] 2025-05-16T23:35:46Z | INFO    | CONN_EST     | 127.0.0.1       | 41688 | N/A
+[-] 2025-05-16T23:35:50Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41688 | LOGN~blah@gmail.com~
+[-] 2025-05-16T23:35:50Z | INFO    | MSG_SENT     | 127.0.0.1       | 41688 | LOGR
+[-] 2025-05-16T23:35:56Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 41688 | CREA~{"type":"folder
+[-] 2025-05-16T23:35:56Z | INFO    | MSG_SENT     | 127.0.0.1       | 41688 | CRER
+[-] 2025-05-16T23:36:04Z | INFO    | DISCONNECT   | 127.0.0.1       | 41688 | N/A
+[-] 2025-05-16T23:36:04Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
