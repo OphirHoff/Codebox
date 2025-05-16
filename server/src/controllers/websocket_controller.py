@@ -227,7 +227,7 @@ class ClientHandler:
             )
 
             self.process = process
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.1)  # Wait a bit for the process to start
             self.pid = await self.get_python_pid(self.container_name)
 
             # Signal that the process is ready
@@ -270,7 +270,7 @@ class ClientHandler:
             )
 
             self.process = process
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.1)  # Wait a bit for the process to start
             self.pid = await self.get_python_pid(self.container_name, code_path=path)
 
             # Signal that the process is ready
@@ -302,7 +302,6 @@ class ClientHandler:
 
         # Read the output from the command
         pid = await process.stdout.readline()
-        print(pid)
         await process.wait()
 
         pid_str = pid.strip().decode('utf-8')  # decode bytes to string
