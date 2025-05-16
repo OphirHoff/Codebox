@@ -122,8 +122,8 @@ class ClientHandler:
 
         elif request == protocol.CODE_GET_FILE:
             if data or data == '':  # File exists (data == '' to support empty files)
-                serialized_data = { 'content' : data }
-                to_send = f"{protocol.CODE_FILE_CONTENT}~{json.dumps(serialized_data)}"
+                encoded_data = base64_encode(data).decode()
+                to_send = f"{protocol.CODE_FILE_CONTENT}~{encoded_data}"
             else:  # File wasn't found
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 

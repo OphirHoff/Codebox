@@ -140,8 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			showNotification("Storage updated", 'success');
 		}
 		else if (response_code == 'FILC') {
-			let fileData = JSON.parse(data[0]);
-			let fileContent = fileData['content'];
+			let fileContent = atob(data[0]);
 			monacoEditor.setValue(fileContent);
 			enableEditor();
 			fileContentChanged = false;
