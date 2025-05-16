@@ -205,8 +205,8 @@ class ClientHandler:
 
     async def run_script(self, data) -> int:
 
-        encoded_code = (json.loads(data))['code']
-        code = base64_decode(encoded_code)
+        # encoded_code = (json.loads(data))['code']
+        code = base64_decode(data)
 
         command = [
             "docker", "run", "-i",
