@@ -138,8 +138,7 @@ class ClientHandler:
             execution_finished, data = data
 
             if not execution_finished:
-                serialized_data = { 'output' : data }
-                to_send = f"{protocol.CODE_OUTPUT}~{json.dumps(serialized_data)}"
+                to_send = f"{protocol.CODE_OUTPUT}~{data}"
             else:
                 to_send = f"{protocol.CODE_RUN_END}~{data}"
         
@@ -205,7 +204,6 @@ class ClientHandler:
 
     async def run_script(self, data) -> int:
 
-        # encoded_code = (json.loads(data))['code']
         code = base64_decode(data)
 
         command = [
