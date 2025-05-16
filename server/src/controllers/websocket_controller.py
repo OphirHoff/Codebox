@@ -18,7 +18,7 @@ from utils.logger import (
 # Globals
 db = database.Database()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
-EXECUTION_MAX_TIME = 60  # seconds
+EXECUTION_TIMEOUT = 60  # seconds
 
 def user_container_id():
 
@@ -216,7 +216,7 @@ class ClientHandler:
             "--name", self.container_name,
             "python_runner",
             "/bin/bash", "-c",
-            f"touch script.py && echo '{code}' > script.py && python3 -u script.py"
+            f"touch script.py && echo '{code}' > script.py && timeout {EXECUTION_TIMEOUT}s python3 -u script.py"
         ]
         
         async def run_process():
@@ -349,7 +349,7 @@ class ClientHandler:
                 stderr=asyncio.subprocess.PIPE
             )
 
-            res = await process.stdout.readline()
+            res = await process.stdout.read()
             if res.decode().strip() == 'S':
                 await self.stream_input()
             
@@ -361,7 +361,6 @@ class ClientHandler:
         await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
     
         input = await self.handle_request(await self.recv())
-        # input = (json.loads(data))['input']
 
         # Command to write to process's stdin in the container
         command = [

@@ -309,7 +309,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	const returnCodeMessages = {
 		0: "Code Execution Successful",
 		1: "Code Exited With Errors",
-		2: "Code Execution Environment Failed (Server Error)"
+		2: "Code Execution Environment Failed (Server Error)",
+		124: "Reached execution timeout"
 	}
 	
 	// Show execution finish status
