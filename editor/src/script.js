@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const createNameInput = document.getElementById('create-name-input');
     const cancelCreateBtn = document.getElementById('cancel-create-btn');
     const confirmCreateBtn = document.getElementById('confirm-create-btn');
+	const contextMenu = document.getElementById('context-menu');
+    const deleteFileBtn = document.getElementById('delete-file-btn');
+    const renameFileBtn = document.getElementById('rename-file-btn');
+    const downloadFileBtn = document.getElementById('download-file-btn');
+    let currentContextMenuFile = null; // To store the file element that was right-clicked
 	let monacoEditor;
 	
 	require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
@@ -1540,6 +1545,127 @@ document.addEventListener('DOMContentLoaded', function () {
 		currentPath = [];
 		console.log('Root folder selected, path reset to: []');
 	});
+	
+	// Function to show context menu
+    function showContextMenu(event, fileElement) {
+        event.preventDefault(); // Prevent default browser context menu
+        contextMenu.classList.remove('hidden');
+        contextMenu.style.top = `${event.clientY}px`;
+        contextMenu.style.left = `${event.clientX}px`;
+        currentContextMenuFile = fileElement; // Store the target file
+    }
+
+    // Function to hide context menu
+    function hideContextMenu() {
+        contextMenu.classList.add('hidden');
+        currentContextMenuFile = null;
+    }
+
+    // Add event listener to hide context menu when clicking elsewhere
+    document.addEventListener('click', function (event) {
+        if (!contextMenu.contains(event.target)) {
+            hideContextMenu();
+        }
+    });
+
+    // Modify createFileItem function to add context menu listener
+    function createFileItem(file) {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+
+        const fileIcon = document.createElement('i');
+        const extension = file.extension || (file.name.includes('.') ? file.name.split('.').pop() : '');
+        fileIcon.className = getFileIcon(extension);
+
+        const fileName = document.createElement('span');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+
+        fileItem.appendChild(fileIcon);
+        fileItem.appendChild(fileName);
+
+        // Add context menu event listener
+        fileItem.addEventListener('contextmenu', function (event) {
+            showContextMenu(event, fileItem);
+        });
+
+        // Add click event to load file content (existing logic)
+        fileItem.addEventListener('click', function() {
+            // Check if there are unsaved changes in the current file
+            if (fileContentChanged) {
+                saveCurrentFile();
+            }
+
+            // Get file path
+            const filePath = [...buildPathFromDom(this), file.name].join('/');
+            loadFileContent(file.name, filePath);
+
+            // Visual indication that this file is selected
+            document.querySelectorAll('.file-item.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            this.classList.add('selected');
+
+            // Store current file info
+            currentFile = {
+                name: file.name,
+                path: filePath
+            };
+
+            // Show save button
+            showSaveButton();
+
+            console.log('Selected file:', file.name, 'at path:', filePath);
+            hideContextMenu(); // Hide context menu if it was open
+        });
+
+        return fileItem;
+    }
+
+    // Context menu action functions
+    function deleteFileAction() {
+        if (currentContextMenuFile) {
+            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
+            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
+            console.log(`Delete file: ${fileName}`);
+            // TODO: Implement delete file logic
+            alert(`Delete file: ${fileName} (functionality not yet implemented)`);
+        }
+        hideContextMenu();
+    }
+
+    function renameFileAction() {
+        if (currentContextMenuFile) {
+            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
+            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
+            console.log(`Rename file: ${fileName}`);
+            // TODO: Implement rename file logic
+            alert(`Rename file: ${fileName} (functionality not yet implemented)`);
+        }
+        hideContextMenu();
+    }
+
+    function downloadFileAction() {
+        if (currentContextMenuFile) {
+            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
+            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
+            console.log(`Download file: ${fileName}`);
+            // TODO: Implement download file logic
+            alert(`Download file: ${fileName} (functionality not yet implemented)`);
+        }
+        hideContextMenu();
+    }
+
+    // Add event listeners for context menu buttons
+    if (deleteFileBtn) {
+        deleteFileBtn.addEventListener('click', deleteFileAction);
+    }
+    if (renameFileBtn) {
+        renameFileBtn.addEventListener('click', renameFileAction);
+    }
+    if (downloadFileBtn) {
+        downloadFileBtn.addEventListener('click', downloadFileAction);
+    }
 	
 	// Sample file structure (this would come from the server)
 	// const fileStructure = [
