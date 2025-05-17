@@ -52,6 +52,20 @@ class UserStorage():
         
         file_path.touch()
         self.update_tree(FileType.FILE, path)
+
+    def delete_file(self, path: str):
+
+        file_path = Path(f"{self.folder_name}/{path}")
+        print(f"file path: {file_path}")
+
+        if not file_path.exists():
+            raise FileNotFoundError()
+        
+        print("reached here")
+
+        file_path.unlink()
+        self.update_tree(None, path, remove=True)
+        
         
     def create_dir(self, path: str):
         
@@ -63,7 +77,7 @@ class UserStorage():
         folder_path.mkdir()
         self.update_tree(FileType.FOLDER, path)
 
-    def update_tree(self, node_type: FileType, path: str):
+    def update_tree(self, node_type: FileType, path: str, remove=False):
         """ Update user files tree. """
 
         path: list = path.split('/')
@@ -87,21 +101,56 @@ class UserStorage():
                 if not found_next_node:
                     raise FileNotFoundError(f"Path not found: {path}")
 
-        # Create new node & add to tree
-        if node_type == FileType.FILE:
-            new_node = {
-                JsonEntries.NODE_TYPE: node_type.value,
-                JsonEntries.NODE_NAME: to_add
-                }
-        
-        else:
-            new_node = {
-                JsonEntries.NODE_TYPE: node_type.value,
-                JsonEntries.NODE_NAME: to_add,
-                JsonEntries.SUB_DIRECTORY: []
-                }
+        if remove:
+            print(current)
+            for dir in current:
+                if dir[JsonEntries.NODE_NAME] == to_add:
+                    current.remove(dir)
+                    print(current)
+                    break
+                    
 
-        current.append(new_node)
+        else:
+            # Create new node & add to tree
+            if node_type == FileType.FILE:
+                new_node = {
+                    JsonEntries.NODE_TYPE: node_type.value,
+                    JsonEntries.NODE_NAME: to_add
+                    }
+            
+            else:
+                new_node = {
+                    JsonEntries.NODE_TYPE: node_type.value,
+                    JsonEntries.NODE_NAME: to_add,
+                    JsonEntries.SUB_DIRECTORY: []
+                    }
+
+            current.append(new_node)
+
+    def find_node_in_tree(self, path: str):
+        
+        path: list = path.split('/')
+        to_add = path.pop(-1)
+
+        current = self.files  # Holds current directory node in the tree
+
+        if path:  # Iterate only if not in the root dir of user's storage
+            for i in range(len(path)):
+
+                curr_node = path.pop(0)    
+                found_next_node = False
+
+                # Find the next node in path
+                for node in current:
+                    if node[JsonEntries.NODE_NAME] == curr_node and node[JsonEntries.NODE_TYPE] == FileType.FOLDER.value:
+                        current = node[JsonEntries.SUB_DIRECTORY]
+                        found_next_node = True
+                
+                # In case node was not found
+                if not found_next_node:
+                    raise FileNotFoundError(f"Path not found: {path}")
+        
+        return current
 
     def create_user_storage(self):
     

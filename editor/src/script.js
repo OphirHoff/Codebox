@@ -154,6 +154,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			showNotification("File was saved successfully!", 'success');
 			enableSaveButton();
 		}
+		else if (response_code == 'DELR') {
+			showNotification("File was deleted successfully!", 'success');
+		}
 		else if (response_code == 'OUTP') {
 			// Decode (bsae64) output
 			let outputLine = atob(data[0]);
@@ -168,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'ERRR') {
 			clearEmailPw();
 			errorCode = data[0];
-			DisplayError(errorCode);
+			displayError(errorCode);
 		}
     });
 	
@@ -178,7 +181,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		"102": "User already exists (102)",
 		"201": "File not found (201)",
 		"202": "Execution timeout (202)",
-		"301": "Failed to create file or folder (301)"
+		"301": "Failed to create file or folder (301)",
+		"302": "Failed to delete file (302)"
 	};
 	
 	function displayError(errorCode) {
@@ -1624,15 +1628,99 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Context menu action functions
     function deleteFileAction() {
-        if (currentContextMenuFile) {
-            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
-            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
-            console.log(`Delete file: ${fileName}`);
-            // TODO: Implement delete file logic
-            alert(`Delete file: ${fileName} (functionality not yet implemented)`);
-        }
-        hideContextMenu();
-    }
+		if (!currentContextMenuFile) {
+			hideContextMenu();
+			return;
+		}
+		
+		const fileNameElement = currentContextMenuFile.querySelector('.file-name');
+		if (!fileNameElement) {
+			hideContextMenu();
+			return;
+		}
+		
+		const fileName = fileNameElement.textContent;
+		
+		// Confirm deletion with user
+		if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+			hideContextMenu();
+			return;
+		}
+		
+		// Get file path by traversing the DOM
+		const filePath = [...buildPathFromDom(currentContextMenuFile), fileName].join('/');
+		
+		// Send delete request to server
+		const deleteMessage = `DELF~${filePath}`;
+		
+		if (socket && socket.readyState === WebSocket.OPEN) {
+			socket.send(deleteMessage);
+			console.log(`Delete request sent for file: ${filePath}`);
+			
+			// If this was the current file being edited, clear the editor
+			if (currentFile && currentFile.path === filePath) {
+				// Clear editor content
+				monacoEditor.setValue('');
+				
+				// Hide current file display
+				const currentFileDisplay = document.getElementById('current-file-display');
+				if (currentFileDisplay) {
+					currentFileDisplay.classList.add('hidden');
+				}
+				
+				// Remove save button
+				const saveBtn = document.getElementById('save-btn');
+				if (saveBtn) {
+					saveBtn.remove();
+				}
+				
+				// Reset current file
+				currentFile = null;
+				fileContentChanged = false;
+			}
+			
+			// Remove the file from the file structure
+			removeFileFromStructure(filePath);
+			
+			// Refresh the file tree
+			populateFileTree();
+		} else {
+			console.error('WebSocket not connected');
+			showNotification('Unable to delete file: Server connection not available', 'error');
+		}
+		
+		hideContextMenu();
+	}
+
+	// Function to remove file from file structure
+	function removeFileFromStructure(filePath) {
+		const pathParts = filePath.split('/');
+		const fileName = pathParts.pop(); // Get the file name (last part)
+		
+		// Find the parent directory
+		let current = fileStructure;
+		let parent = null;
+		
+		// Navigate to the parent directory
+		for (const part of pathParts) {
+			parent = current;
+			const found = current.find(item => item.type === 'folder' && item.name === part);
+			if (found && found.children) {
+				current = found.children;
+			} else {
+				return false; // Path not found
+			}
+		}
+		
+		// Remove the file from the parent directory
+		const fileIndex = current.findIndex(item => item.name === fileName);
+		if (fileIndex !== -1) {
+			current.splice(fileIndex, 1);
+			return true;
+		}
+		
+		return false;
+	}
 
     function renameFileAction() {
         if (currentContextMenuFile) {

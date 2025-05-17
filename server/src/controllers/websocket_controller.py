@@ -133,6 +133,12 @@ class ClientHandler:
             else:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
+        elif request == protocol.CODE_DELETE_FILE:
+            if data:
+                to_send = protocol.CODE_FILE_DELETED
+            else:
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_DELETE}"
+
         elif request == protocol.CODE_RUN_SCRIPT or request == protocol.CODE_RUN_FILE:
             
             execution_finished, data = data
@@ -194,6 +200,12 @@ class ClientHandler:
                 data: dict = json.loads(data[0])
                 res = user_storage_add(self.email, data)
                 to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
+            
+            elif code == protocol.CODE_DELETE_FILE:
+                file_path = data[0]
+                res = user_file_delete(self.email, file_path)
+                to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
+
         
         except Exception as e:
             print(f"Error: {e}")
@@ -353,7 +365,6 @@ class ClientHandler:
             if res.decode().strip() == 'S':
                 await self.stream_input()
             
-
     async def stream_input(self):
         """
         Asynchronously streams input to the running container's stdin.
@@ -428,6 +439,23 @@ def user_storage_add(email, new_node: str) -> bool:
         # Storage update failed
         return False
     
+    db.set_user_files_struct(email, user_storage)
+
+    # Storage update succeeded
+    return True
+
+
+def user_file_delete(email, file_path: str) -> bool:
+
+    user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+
+    try:
+        user_storage.delete_file(file_path)
+    except Exception as e:
+        print(f"error: {e}")
+        # Storage update failed
+        return False
+
     db.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded

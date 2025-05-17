@@ -124,3 +124,268 @@
 [-] 2025-05-17T14:43:40Z | INFO    | MSG_SENT     | 127.0.0.1       | 51941 | LOGR
 [-] 2025-05-17T14:44:39Z | INFO    | DISCONNECT   | 127.0.0.1       | 51941 | N/A
 [-] 2025-05-17T14:44:39Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T14:49:36Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T14:49:38Z | INFO    | CONN_EST     | 127.0.0.1       | 52051 | N/A
+[-] 2025-05-17T14:49:42Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52051 | LOGN~blah@gmail.com~
+[-] 2025-05-17T14:49:42Z | INFO    | MSG_SENT     | 127.0.0.1       | 52051 | LOGR
+[-] 2025-05-17T14:58:07Z | INFO    | DISCONNECT   | 127.0.0.1       | 52051 | N/A
+[-] 2025-05-17T14:58:08Z | INFO    | CONN_EST     | 127.0.0.1       | 52738 | N/A
+[-] 2025-05-17T14:58:11Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52738 | LOGN~blah@gmail.com~
+[-] 2025-05-17T14:58:11Z | INFO    | MSG_SENT     | 127.0.0.1       | 52738 | LOGR
+[-] 2025-05-17T14:58:36Z | INFO    | DISCONNECT   | 127.0.0.1       | 52738 | N/A
+[-] 2025-05-17T14:58:36Z | INFO    | CONN_EST     | 127.0.0.1       | 52743 | N/A
+[-] 2025-05-17T14:58:40Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52743 | LOGN~blah@gmail.com~
+[-] 2025-05-17T14:58:40Z | INFO    | MSG_SENT     | 127.0.0.1       | 52743 | LOGR
+[-] 2025-05-17T14:58:55Z | INFO    | DISCONNECT   | 127.0.0.1       | 52743 | N/A
+[-] 2025-05-17T14:58:55Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T14:58:59Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T14:59:00Z | INFO    | CONN_EST     | 127.0.0.1       | 52749 | N/A
+[-] 2025-05-17T14:59:04Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52749 | LOGN~blah@gmail.com~
+[-] 2025-05-17T14:59:04Z | INFO    | MSG_SENT     | 127.0.0.1       | 52749 | LOGR
+[-] 2025-05-17T15:02:08Z | INFO    | DISCONNECT   | 127.0.0.1       | 52749 | N/A
+[-] 2025-05-17T15:02:12Z | INFO    | CONN_EST     | 127.0.0.1       | 52785 | N/A
+[-] 2025-05-17T15:02:13Z | INFO    | DISCONNECT   | 127.0.0.1       | 52785 | N/A
+[-] 2025-05-17T15:02:13Z | INFO    | CONN_EST     | 127.0.0.1       | 52786 | N/A
+[-] 2025-05-17T15:02:20Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52786 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:02:20Z | INFO    | MSG_SENT     | 127.0.0.1       | 52786 | LOGR
+[-] 2025-05-17T15:02:26Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52786 | DELF~main.py
+[-] 2025-05-17T15:02:42Z | INFO    | DISCONNECT   | 127.0.0.1       | 52786 | N/A
+[-] 2025-05-17T15:02:42Z | INFO    | CONN_EST     | 127.0.0.1       | 52792 | N/A
+[-] 2025-05-17T15:02:46Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52792 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:02:46Z | INFO    | MSG_SENT     | 127.0.0.1       | 52792 | LOGR
+[-] 2025-05-17T15:04:05Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 52792 | DELF~utils/testttt/b
+[-] 2025-05-17T15:12:12Z | INFO    | DISCONNECT   | 127.0.0.1       | 52792 | N/A
+[-] 2025-05-17T15:12:12Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:12:13Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:12:16Z | INFO    | CONN_EST     | 127.0.0.1       | 53052 | N/A
+[-] 2025-05-17T15:12:33Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53052 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:12:33Z | INFO    | MSG_SENT     | 127.0.0.1       | 53052 | LOGR
+[-] 2025-05-17T15:12:43Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53052 | CREA~{"type":"folder
+[-] 2025-05-17T15:12:43Z | INFO    | MSG_SENT     | 127.0.0.1       | 53052 | ERRR
+[-] 2025-05-17T15:13:31Z | INFO    | DISCONNECT   | 127.0.0.1       | 53052 | N/A
+[-] 2025-05-17T15:13:32Z | INFO    | CONN_EST     | 127.0.0.1       | 53078 | N/A
+[-] 2025-05-17T15:13:35Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53078 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:13:35Z | INFO    | MSG_SENT     | 127.0.0.1       | 53078 | LOGR
+[-] 2025-05-17T15:13:41Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53078 | CREA~{"type":"folder
+[-] 2025-05-17T15:13:41Z | INFO    | MSG_SENT     | 127.0.0.1       | 53078 | ERRR
+[-] 2025-05-17T15:13:52Z | INFO    | DISCONNECT   | 127.0.0.1       | 53078 | N/A
+[-] 2025-05-17T15:13:52Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:14:37Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+server listening on 0.0.0.0:8765
+= connection is CONNECTING
+< GET / HTTP/1.1
+< Host: 127.0.0.1:8765
+< Connection: Upgrade
+< Pragma: no-cache
+< Cache-Control: no-cache
+< User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36
+< Upgrade: websocket
+< Origin: null
+< Sec-WebSocket-Version: 13
+< Accept-Encoding: gzip, deflate, br, zstd
+< Accept-Language: en-GB,en-US;q=0.9,en;q=0.8
+< Sec-WebSocket-Key: 0nHuYyzyqBePBb1RT2h9Hw==
+< Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+> HTTP/1.1 101 Switching Protocols
+> Date: Sat, 17 May 2025 15:14:39 GMT
+> Upgrade: websocket
+> Connection: Upgrade
+> Sec-WebSocket-Accept: u9hJeffwawkB8Y8r69m5fCaQFTI=
+> Sec-WebSocket-Extensions: permessage-deflate; server_max_window_bits=12; client_max_window_bits=12
+> Server: Python/3.10 websockets/15.0.1
+= connection is OPEN
+connection open
+[-] 2025-05-17T15:14:39Z | INFO    | CONN_EST     | 127.0.0.1       | 53109 | N/A
+< TEXT 'LOGN~jjjj@gmail.com~123' [23 bytes]
+[-] 2025-05-17T15:14:43Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53109 | LOGN~jjjj@gmail.com~
+> TEXT 'LOGR~[\n    {\n        "type": "file",\n       ...new_file.txt"\n    }\n]' [330 bytes]
+[-] 2025-05-17T15:14:43Z | INFO    | MSG_SENT     | 127.0.0.1       | 53109 | LOGR
+< TEXT 'CREA~{"type":"folder","name":"new","path":"new"}' [48 bytes]
+[-] 2025-05-17T15:14:51Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53109 | CREA~{"type":"folder
+> TEXT 'ERRR~301' [8 bytes]
+[-] 2025-05-17T15:14:51Z | INFO    | MSG_SENT     | 127.0.0.1       | 53109 | ERRR
+server closing
+> CLOSE 1001 (going away) [2 bytes]
+= connection is CLOSING
+< CLOSE 1001 (going away) [2 bytes]
+> EOF
+x half-closing TCP connection
+< EOF
+= connection is CLOSED
+[-] 2025-05-17T15:14:54Z | INFO    | DISCONNECT   | 127.0.0.1       | 53109 | N/A
+server closed
+[-] 2025-05-17T15:14:54Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:15:09Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:15:11Z | INFO    | CONN_EST     | 127.0.0.1       | 53125 | N/A
+[-] 2025-05-17T15:15:14Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53125 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:15:14Z | INFO    | MSG_SENT     | 127.0.0.1       | 53125 | LOGR
+[-] 2025-05-17T15:15:18Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53125 | CREA~{"type":"folder
+[-] 2025-05-17T15:15:18Z | INFO    | MSG_SENT     | 127.0.0.1       | 53125 | ERRR
+[-] 2025-05-17T15:16:09Z | INFO    | DISCONNECT   | 127.0.0.1       | 53125 | N/A
+[-] 2025-05-17T15:16:09Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:16:11Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:16:12Z | INFO    | CONN_EST     | 127.0.0.1       | 53147 | N/A
+[-] 2025-05-17T15:16:16Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53147 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:16:16Z | INFO    | MSG_SENT     | 127.0.0.1       | 53147 | LOGR
+[-] 2025-05-17T15:16:22Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53147 | CREA~{"type":"folder
+[-] 2025-05-17T15:16:22Z | INFO    | MSG_SENT     | 127.0.0.1       | 53147 | ERRR
+[-] 2025-05-17T15:23:37Z | INFO    | DISCONNECT   | 127.0.0.1       | 53147 | N/A
+[-] 2025-05-17T15:23:37Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:23:38Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:23:42Z | INFO    | CONN_EST     | 127.0.0.1       | 53330 | N/A
+[-] 2025-05-17T15:23:46Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53330 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:23:46Z | INFO    | MSG_SENT     | 127.0.0.1       | 53330 | LOGR
+[-] 2025-05-17T15:23:54Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53330 | GETF~utils/hhh.py
+[-] 2025-05-17T15:23:54Z | INFO    | MSG_SENT     | 127.0.0.1       | 53330 | FILC
+[-] 2025-05-17T15:23:59Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53330 | DELF~utils/hhh.py
+[-] 2025-05-17T15:23:59Z | INFO    | MSG_SENT     | 127.0.0.1       | 53330 | ERRR
+[-] 2025-05-17T15:26:41Z | INFO    | DISCONNECT   | 127.0.0.1       | 53330 | N/A
+[-] 2025-05-17T15:26:41Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:26:42Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:26:43Z | INFO    | CONN_EST     | 127.0.0.1       | 53439 | N/A
+[-] 2025-05-17T15:26:48Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53439 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:26:48Z | INFO    | MSG_SENT     | 127.0.0.1       | 53439 | LOGR
+[-] 2025-05-17T15:26:54Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53439 | DELF~utils/hhh.py
+[-] 2025-05-17T15:26:54Z | INFO    | MSG_SENT     | 127.0.0.1       | 53439 | ERRR
+[-] 2025-05-17T15:27:28Z | INFO    | DISCONNECT   | 127.0.0.1       | 53439 | N/A
+[-] 2025-05-17T15:27:28Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:27:29Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:27:31Z | INFO    | CONN_EST     | 127.0.0.1       | 53462 | N/A
+[-] 2025-05-17T15:27:36Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53462 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:27:36Z | INFO    | MSG_SENT     | 127.0.0.1       | 53462 | LOGR
+[-] 2025-05-17T15:27:42Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53462 | DELF~utils/hhh.py
+[-] 2025-05-17T15:27:42Z | INFO    | MSG_SENT     | 127.0.0.1       | 53462 | ERRR
+[-] 2025-05-17T15:28:02Z | INFO    | DISCONNECT   | 127.0.0.1       | 53462 | N/A
+[-] 2025-05-17T15:28:02Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:28:05Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:28:06Z | INFO    | CONN_EST     | 127.0.0.1       | 53476 | N/A
+[-] 2025-05-17T15:28:10Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53476 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:28:10Z | INFO    | MSG_SENT     | 127.0.0.1       | 53476 | LOGR
+[-] 2025-05-17T15:28:16Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53476 | DELF~utils/hhh.py
+[-] 2025-05-17T15:28:16Z | INFO    | MSG_SENT     | 127.0.0.1       | 53476 | ERRR
+[-] 2025-05-17T15:28:34Z | INFO    | DISCONNECT   | 127.0.0.1       | 53476 | N/A
+[-] 2025-05-17T15:28:34Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:28:35Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:28:36Z | INFO    | CONN_EST     | 127.0.0.1       | 53487 | N/A
+[-] 2025-05-17T15:28:40Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53487 | LOGN~blah@gmail.com1
+[-] 2025-05-17T15:28:40Z | INFO    | MSG_SENT     | 127.0.0.1       | 53487 | ERRR
+[-] 2025-05-17T15:28:44Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53487 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:28:44Z | INFO    | MSG_SENT     | 127.0.0.1       | 53487 | LOGR
+[-] 2025-05-17T15:28:48Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53487 | DELF~utils/hhh.py
+[-] 2025-05-17T15:28:48Z | INFO    | MSG_SENT     | 127.0.0.1       | 53487 | ERRR
+[-] 2025-05-17T15:30:03Z | INFO    | DISCONNECT   | 127.0.0.1       | 53487 | N/A
+[-] 2025-05-17T15:30:03Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:30:04Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:30:05Z | INFO    | CONN_EST     | 127.0.0.1       | 53516 | N/A
+[-] 2025-05-17T15:30:09Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53516 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:30:09Z | INFO    | MSG_SENT     | 127.0.0.1       | 53516 | LOGR
+[-] 2025-05-17T15:30:13Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53516 | DELF~utils/hhh.py
+[-] 2025-05-17T15:30:13Z | INFO    | MSG_SENT     | 127.0.0.1       | 53516 | ERRR
+[-] 2025-05-17T15:31:06Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53516 | DELF~utils/test.py
+[-] 2025-05-17T15:31:06Z | INFO    | MSG_SENT     | 127.0.0.1       | 53516 | ERRR
+[-] 2025-05-17T15:32:11Z | INFO    | DISCONNECT   | 127.0.0.1       | 53516 | N/A
+[-] 2025-05-17T15:32:11Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:32:12Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:32:15Z | INFO    | CONN_EST     | 127.0.0.1       | 53541 | N/A
+[-] 2025-05-17T15:32:19Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53541 | LOGN~blah@gmail.com~
+[-] 2025-05-17T15:32:19Z | INFO    | MSG_SENT     | 127.0.0.1       | 53541 | LOGR
+[-] 2025-05-17T15:32:29Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53541 | DELF~utils/test2.py
+[-] 2025-05-17T15:32:29Z | INFO    | MSG_SENT     | 127.0.0.1       | 53541 | ERRR
+[-] 2025-05-17T15:34:10Z | INFO    | DISCONNECT   | 127.0.0.1       | 53541 | N/A
+[-] 2025-05-17T15:34:10Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:34:11Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:34:13Z | INFO    | CONN_EST     | 127.0.0.1       | 53584 | N/A
+[-] 2025-05-17T15:34:17Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:34:17Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | LOGR
+[-] 2025-05-17T15:34:24Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | CREA~{"type":"folder
+[-] 2025-05-17T15:34:24Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | CRER
+[-] 2025-05-17T15:34:36Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | CREA~{"type":"file",
+[-] 2025-05-17T15:34:36Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | CRER
+[-] 2025-05-17T15:34:37Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | GETF~hello/1234.txt
+[-] 2025-05-17T15:34:37Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | FILC
+[-] 2025-05-17T15:34:54Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | GETF~hello/1234.txt
+[-] 2025-05-17T15:34:54Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | FILC
+[-] 2025-05-17T15:35:00Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | SAVF~{"path":"hello/
+[-] 2025-05-17T15:35:00Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | SAVR
+[-] 2025-05-17T15:35:14Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53584 | DELF~hello/1234.txt
+[-] 2025-05-17T15:35:14Z | INFO    | MSG_SENT     | 127.0.0.1       | 53584 | DELR
+[-] 2025-05-17T15:35:27Z | INFO    | DISCONNECT   | 127.0.0.1       | 53584 | N/A
+[-] 2025-05-17T15:35:28Z | INFO    | CONN_EST     | 127.0.0.1       | 53591 | N/A
+[-] 2025-05-17T15:35:31Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53591 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:35:31Z | INFO    | MSG_SENT     | 127.0.0.1       | 53591 | LOGR
+[-] 2025-05-17T15:35:35Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53591 | GETF~hello/1234.txt
+[-] 2025-05-17T15:35:35Z | INFO    | MSG_SENT     | 127.0.0.1       | 53591 | ERRR
+[-] 2025-05-17T15:36:02Z | INFO    | DISCONNECT   | 127.0.0.1       | 53591 | N/A
+[-] 2025-05-17T15:36:02Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:36:04Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:36:06Z | INFO    | CONN_EST     | 127.0.0.1       | 53609 | N/A
+[-] 2025-05-17T15:36:10Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53609 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:36:10Z | INFO    | MSG_SENT     | 127.0.0.1       | 53609 | LOGR
+[-] 2025-05-17T15:36:13Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53609 | GETF~hello/1234.txt
+[-] 2025-05-17T15:36:13Z | INFO    | MSG_SENT     | 127.0.0.1       | 53609 | ERRR
+[-] 2025-05-17T15:36:19Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53609 | CREA~{"type":"file",
+[-] 2025-05-17T15:36:19Z | INFO    | MSG_SENT     | 127.0.0.1       | 53609 | CRER
+[-] 2025-05-17T15:36:27Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53609 | DELF~hello/222.txt
+[-] 2025-05-17T15:36:27Z | INFO    | MSG_SENT     | 127.0.0.1       | 53609 | DELR
+[-] 2025-05-17T15:37:07Z | INFO    | DISCONNECT   | 127.0.0.1       | 53609 | N/A
+[-] 2025-05-17T15:37:07Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:37:09Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:37:10Z | INFO    | CONN_EST     | 127.0.0.1       | 53627 | N/A
+[-] 2025-05-17T15:37:14Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53627 | LOGN~jjjj@gmail.com~
+[-] 2025-05-17T15:37:14Z | INFO    | MSG_SENT     | 127.0.0.1       | 53627 | LOGR
+[-] 2025-05-17T15:45:24Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53627 | DELF~hello/1234.txt
+[-] 2025-05-17T15:45:24Z | INFO    | MSG_SENT     | 127.0.0.1       | 53627 | ERRR
+[-] 2025-05-17T15:45:27Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53627 | DELF~hello/222.txt
+[-] 2025-05-17T15:45:27Z | INFO    | MSG_SENT     | 127.0.0.1       | 53627 | ERRR
+[-] 2025-05-17T15:45:36Z | INFO    | DISCONNECT   | 127.0.0.1       | 53627 | N/A
+[-] 2025-05-17T15:45:36Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:45:52Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:45:54Z | INFO    | CONN_EST     | 127.0.0.1       | 53696 | N/A
+[-] 2025-05-17T15:46:20Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | REGI~ttt@123.com~123
+[-] 2025-05-17T15:46:20Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | REGR
+[-] 2025-05-17T15:46:23Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | LOGN~ttt@123.com~123
+[-] 2025-05-17T15:46:23Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | LOGR
+[-] 2025-05-17T15:46:31Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | CREA~{"type":"file",
+[-] 2025-05-17T15:46:31Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | CRER
+[-] 2025-05-17T15:46:37Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | CREA~{"type":"folder
+[-] 2025-05-17T15:46:37Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | CRER
+[-] 2025-05-17T15:46:48Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | CREA~{"type":"file",
+[-] 2025-05-17T15:46:48Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | CRER
+[-] 2025-05-17T15:46:48Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | GETF~new dir/todel.t
+[-] 2025-05-17T15:46:48Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | FILC
+[-] 2025-05-17T15:46:53Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53696 | SAVF~{"path":"new di
+[-] 2025-05-17T15:46:53Z | INFO    | MSG_SENT     | 127.0.0.1       | 53696 | SAVR
+[-] 2025-05-17T15:46:55Z | INFO    | DISCONNECT   | 127.0.0.1       | 53696 | N/A
+[-] 2025-05-17T15:46:55Z | INFO    | CONN_EST     | 127.0.0.1       | 53699 | N/A
+[-] 2025-05-17T15:46:59Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53699 | LOGN~ttt@123.com~123
+[-] 2025-05-17T15:46:59Z | INFO    | MSG_SENT     | 127.0.0.1       | 53699 | LOGR
+[-] 2025-05-17T15:47:01Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53699 | GETF~new dir/todel.t
+[-] 2025-05-17T15:47:01Z | INFO    | MSG_SENT     | 127.0.0.1       | 53699 | FILC
+[-] 2025-05-17T15:47:05Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53699 | DELF~new dir/todel.t
+[-] 2025-05-17T15:47:05Z | INFO    | MSG_SENT     | 127.0.0.1       | 53699 | DELR
+[-] 2025-05-17T15:48:53Z | INFO    | DISCONNECT   | 127.0.0.1       | 53699 | N/A
+[-] 2025-05-17T15:48:53Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:50:19Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:50:19Z | INFO    | CONN_EST     | 127.0.0.1       | 53737 | N/A
+[-] 2025-05-17T15:50:23Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53737 | LOGN~ttt@123.com~123
+[-] 2025-05-17T15:50:23Z | INFO    | MSG_SENT     | 127.0.0.1       | 53737 | LOGR
+[-] 2025-05-17T15:50:31Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53737 | CREA~{"type":"file",
+[-] 2025-05-17T15:50:31Z | INFO    | MSG_SENT     | 127.0.0.1       | 53737 | CRER
+[-] 2025-05-17T15:50:33Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53737 | DELF~new dir/123.txt
+[-] 2025-05-17T15:50:33Z | INFO    | MSG_SENT     | 127.0.0.1       | 53737 | DELR
+[-] 2025-05-17T15:50:41Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53737 | CREA~{"type":"file",
+[-] 2025-05-17T15:50:41Z | INFO    | MSG_SENT     | 127.0.0.1       | 53737 | CRER
+[-] 2025-05-17T15:50:46Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53737 | DELF~new dir/123.txt
+[-] 2025-05-17T15:50:46Z | INFO    | MSG_SENT     | 127.0.0.1       | 53737 | DELR
+[-] 2025-05-17T15:51:03Z | INFO    | DISCONNECT   | 127.0.0.1       | 53737 | N/A
+[-] 2025-05-17T15:51:03Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:52:06Z | INFO    | SRV_START    | N/A             | N/A   | N/A
+[-] 2025-05-17T15:52:13Z | INFO    | CONN_EST     | 127.0.0.1       | 53765 | N/A
+[-] 2025-05-17T15:52:17Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53765 | LOGN~ttt@123.com~123
+[-] 2025-05-17T15:52:17Z | INFO    | MSG_SENT     | 127.0.0.1       | 53765 | LOGR
+[-] 2025-05-17T15:52:20Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53765 | GETF~main.py
+[-] 2025-05-17T15:52:20Z | INFO    | MSG_SENT     | 127.0.0.1       | 53765 | FILC
+[-] 2025-05-17T15:52:23Z | INFO    | MSG_RECEIVED | 127.0.0.1       | 53765 | DELF~main.py
+[-] 2025-05-17T15:52:24Z | INFO    | MSG_SENT     | 127.0.0.1       | 53765 | DELR
+[-] 2025-05-17T15:52:36Z | INFO    | DISCONNECT   | 127.0.0.1       | 53765 | N/A
+[-] 2025-05-17T15:52:36Z | INFO    | SRV_CLOSE    | N/A             | N/A   | N/A

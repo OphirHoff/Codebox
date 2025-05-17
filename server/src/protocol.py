@@ -7,6 +7,7 @@ CODE_GET_FILE = 'GETF'
 CODE_SAVE_FILE = 'SAVF'
 CODE_RUN_FILE = 'RUNF'
 CODE_INPUT = 'INPR'
+CODE_DELETE_FILE = 'DELF'
 
 ### Server --> Client ###
 CODE_REGISTER_SUCCESS = 'REGR'
@@ -17,6 +18,7 @@ CODE_RUN_END = 'DONE'
 CODE_STORAGE_UPDATED = 'CRER'
 CODE_FILE_CONTENT = 'FILC'
 CODE_FILE_SAVED = 'SAVR'
+CODE_FILE_DELETED = 'DELR'
 CODE_ERROR = 'ERRR'
 
 ### Error Codes ###
@@ -28,6 +30,7 @@ CODE_ERROR = 'ERRR'
 202: Execution Failed
 203: Execution exeeded max run time
 301: Failed to create file or folder
+302: Failed to delete file
 '''
 ERROR_GENERAL = '001'
 ERROR_LOGIN_FAILED = '101'
@@ -35,6 +38,7 @@ ERROR_USER_EXIST = '102'
 ERROR_FILE_NOT_FOUND = '201'
 ERROR_EXECUTION_TIMEOUT = '202'
 ERROR_STORAGE_CREATE = '301'
+ERROR_FILE_DELETE = '302'
 
 class JsonEntries:
 
