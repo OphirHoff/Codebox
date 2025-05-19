@@ -18,7 +18,7 @@ from utils.logger import (
 # Globals
 db = database.Database()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
-EXECUTION_TIMEOUT = 60  # seconds
+EXECUTION_TIMEOUT = 10  # seconds
 
 def user_container_id():
 
@@ -234,6 +234,7 @@ class ClientHandler:
         async def run_process():
             process = await asyncio.create_subprocess_exec(
                 *command,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT
             )
@@ -243,18 +244,33 @@ class ClientHandler:
             self.pid = await self.get_python_pid(self.container_name)
 
             # Signal that the process is ready
-            self.process_ready_event.set()
+            self.process_ready_event.set()  # To fix - event not needed anymore
 
+            await asyncio.gather(
+                self.moniter_input_syscalls(),
+                self.stream_output()
+            )
+
+            await process.wait()
+            return process.returncode
 
         self.container_running = True
 
-        await asyncio.gather(
-            run_process(),
-            self.stream_output(self.process),
-            self.moniter_input_syscalls(self.pid)
-        )
+        try:
+            returncode = await asyncio.wait_for(
+                run_process(),
+                timeout=EXECUTION_TIMEOUT + 1  # slight buffer
+            )
+        except asyncio.TimeoutError:
+            self.logger.log_connection_event(Level.LEVEL_ERROR, Event.EXECUTION_TIMEOUT)
+            try:
+                self.process.kill()
+            except:
+                pass
+            await self.process.wait()
+            return 3
 
-        return self.process.returncode
+        return returncode
 
     async def run_from_storage(self, path: str) -> int:
         
@@ -271,7 +287,7 @@ class ClientHandler:
             "-v", f"{os.path.abspath(user_path)}:{SANDBOX_WORKDIR}:ro",
             "--name", self.container_name,
             "python_runner",
-            "python3", "-u", path
+            f"timeout {EXECUTION_TIMEOUT}s", "python3", "-u", path
         ]
         
         async def run_process():
@@ -283,21 +299,33 @@ class ClientHandler:
 
             self.process = process
             await asyncio.sleep(0.1)  # Wait a bit for the process to start
-            self.pid = await self.get_python_pid(self.container_name, code_path=path)
+            self.pid = await self.get_python_pid(self.container_name)
 
             # Signal that the process is ready
-            self.process_ready_event.set()
+            self.process_ready_event.set()  # To fix - event not needed anymore
 
+            await asyncio.gather(
+                self.moniter_input_syscalls(),
+                self.stream_output()
+            )
+
+            await process.wait()
+            return process.returncode
 
         self.container_running = True
 
-        await asyncio.gather(
-            run_process(),
-            self.stream_output(self.process),
-            self.moniter_input_syscalls(self.pid)
-        )
+        try:
+            returncode = await asyncio.wait_for(
+                run_process(),
+                timeout=EXECUTION_TIMEOUT + 1  # slight buffer
+            )
+        except asyncio.TimeoutError:
+            self.logger.log_connection_event(Level.LEVEL_ERROR, Event.EXECUTION_TIMEOUT)
+            self.process.kill()
+            await self.process.wait()
+            return 202
 
-        return self.process.returncode
+        return returncode
     
     async def get_python_pid(self, container_name: str, code_path: str = 'script.py') -> int:
         """
@@ -305,21 +333,27 @@ class ClientHandler:
         """
         # Use `docker exec` to run `pgrep` to get Python execution process id
         command = f"docker exec {container_name} pgrep -f {code_path}"
+        
+        async def run_pgrep():
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
-        process = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+            # Read the output from the command
+            pid = await process.stdout.readline()
+            await process.wait()
 
-        # Read the output from the command
-        pid = await process.stdout.readline()
-        await process.wait()
+            return pid
+        
 
-        pid_str = pid.strip().decode('utf-8')  # decode bytes to string
-        if not pid_str:
-            print(f"Error: No Python PID returned for container {container_name}.")
-            return None
+        while self.is_process_running():
+            pid = await run_pgrep()
+            pid_str = pid.strip().decode('utf-8')  # decode bytes to string
+            if pid_str:
+                break
 
         try:
             return int(pid_str)  # Convert the PID string to an integer
@@ -327,7 +361,7 @@ class ClientHandler:
             print(f"Error: Failed to convert PID '{pid_str}' to an integer.")
             return None
 
-    async def stream_output(self, process):
+    async def stream_output(self):
         
         # Wait for the process to be ready before starting streaming
         await self.process_ready_event.wait()
@@ -344,17 +378,17 @@ class ClientHandler:
         self.container_running = False
         self.process_ready_event.clear()
     
-    async def moniter_input_syscalls(self, pid: int):
+    async def moniter_input_syscalls(self):
         """
         Asynchronously checks if the process is blocked on input from stdin.
         """
         # Wait for the process to be ready before starting streaming
         await self.process_ready_event.wait()
 
+        command = f"docker exec {self.container_name} ps -o state= -p {self.pid}"
+
         while self.container_running:
-
-            command = f"docker exec {self.container_name} ps -o state= -p {self.pid}"
-
+            
             process = await asyncio.create_subprocess_shell(
                 command,
                 stdout=asyncio.subprocess.PIPE,
@@ -392,6 +426,9 @@ class ClientHandler:
 
         # Send the input string
         await process.communicate(input.encode())
+
+    def is_process_running(self):
+        return self.process.returncode is None
 
 
 def register_user(email: str, password: str) -> bool:

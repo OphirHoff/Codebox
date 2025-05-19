@@ -3,5 +3,7 @@ __pycache__/
 *.pyo
 *.sqlite
 *.env
+*.log
 ToDo.txt
 docs/
+certs/

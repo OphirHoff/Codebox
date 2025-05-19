@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 1300);
 
     // WebSocket connection
-    const socket = new WebSocket('ws://127.0.0.1:8765'); // Replace with your WebSocket server URL
+    const socket = new WebSocket('wss://icodebox.duckdns.org:8765'); // Replace with your WebSocket server URL
 
     // Handle WebSocket connection open
     socket.addEventListener('open', () => {
@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		0: "Code Execution Successful",
 		1: "Code Exited With Errors",
 		2: "Code Execution Environment Failed (Server Error)",
-		124: "Reached execution timeout"
+		3: "Reached execution timeout"
 	}
 	
 	// Show execution finish status
