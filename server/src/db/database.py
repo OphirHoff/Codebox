@@ -4,8 +4,11 @@ from utils import security, user_file_manager
 import db.queries as queries
 import datetime
 import errors
+import os
 
-DB_FILE = "../data/users.sqlite"
+module_path = os.path.dirname(os.path.abspath(__file__))
+print(module_path)
+DB_FILE = f"{module_path}/../../data/users.sqlite"
 
 # indexes
 PW = 0

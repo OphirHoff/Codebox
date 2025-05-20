@@ -4,29 +4,16 @@ import pickle
 import logging
 from utils.tcp_by_size import send_one_message, recv_one_message, TCP_DEBUG
 from utils.user_file_manager import UserStorage
-
-# Example: Define a generic client error
-class DatabaseClientError(Exception):
-    """Base exception for database client errors."""
-    pass
-
-class ConnectionError(DatabaseClientError):
-    """Raised for errors connecting to the database server."""
-    pass
-
-class ServerError(DatabaseClientError):
-    """Raised when the server reports an error processing a request."""
-    pass
-
+from utils.logger import (
+    Logger,
+    Level,
+    Event
+    )
 
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 65432
-# BUFFER_SIZE is not directly used by the client's _send_request anymore,
-# as recv_one_message handles its own buffering.
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - Client: %(message)s')
-# You can control the tcp_by_size debug output if needed, e.g.:
-# tcp_by_size.TCP_DEBUG = True # or False
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - Client: %(message)s')
 
 class DatabaseSocketClient:
     """
@@ -44,6 +31,7 @@ class DatabaseSocketClient:
         self.host = host
         self.port = port
         self.timeout = 10 # seconds
+        self.logger = Logger(self.host, self.port)
 
     def _send_request(self, command, *args, **kwargs):
         """
@@ -69,18 +57,19 @@ class DatabaseSocketClient:
         }
         
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(self.timeout)
-                logging.info(f"Connecting to server at {self.host}:{self.port}")
-                s.connect((self.host, self.port))
+            with socket.socket() as sock:
+                sock.settimeout(self.timeout)
+                self.logger.log_connection_event(Level.LEVEL_INFO, Event.DB_CONNECTION_ESTABLISHED)
+
+                sock.connect((self.host, self.port))
                 
                 serialized_payload = pickle.dumps(request_payload)
                 
                 # Use send_one_message from tcp_by_size.py
-                send_one_message(s, serialized_payload)
-                logging.info(f"Sent command: {command} with args: {args}, kwargs: {kwargs} using tcp_by_size")
+                send_one_message(sock, serialized_payload)
+                self.logger.log_connection_event(Level.LEVEL_INFO, Event.DB_QUERY, f"{command} with args: {args}, kwargs: {kwargs}")
 
-                received_data = recv_one_message(s, return_type="bytes")
+                received_data = recv_one_message(sock, return_type="bytes")
                 
                 if received_data is None: # Connection closed or error in recv_one_message
                     logging.error("Server closed connection or error during receive.")
@@ -92,7 +81,7 @@ class DatabaseSocketClient:
                     raise ConnectionError("Received empty data from server, cannot unpickle.")
 
                 response = pickle.loads(received_data)
-                logging.info(f"Received response: {response.get('status')}")
+                self.logger.log_connection_event(Level.LEVEL_INFO, Event.DB_RESPONSE, message=f"{response.get('status')}")
 
                 if response.get('status') == 'success':
                     return response.get('data')
@@ -100,7 +89,7 @@ class DatabaseSocketClient:
                     error_type = response.get('error_type', 'UnknownError')
                     error_message = response.get('message', 'Unknown server error')
                     logging.error(f"Server error: {error_type} - {error_message}")
-                    raise ServerError(f"{error_type}: {error_message}")
+                    # raise ServerError(f"{error_type}: {error_message}")
                 else:
                     logging.error(f"Unknown response format: {response}")
                     raise ConnectionError("Unknown response format from server.")
@@ -116,11 +105,6 @@ class DatabaseSocketClient:
             raise ConnectionError(f"Data serialization/deserialization error: {e}")
         except ConnectionError: # Re-raise specific ConnectionErrors
             raise
-        except ServerError: # Re-raise specific ServerErrors
-            raise
-        except Exception as e:
-            logging.error(f"An unexpected error occurred in _send_request: {e}", exc_info=True)
-            raise DatabaseClientError(f"Unexpected client error: {e}")
 
 
     def is_user_exist(self, email):

@@ -5,6 +5,9 @@ import threading
 import logging
 import sys
 import os
+
+# Add the parent directory to sys.path to allow access packages
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from utils.tcp_by_size import send_one_message, recv_one_message, TCP_DEBUG
 from db.database import Database
 import errors
@@ -14,14 +17,6 @@ DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 65432
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - Server: %(message)s')
-
-try:
-    # Try to load database
-    db = Database()
-except Exception as e:
-    logging.critical(f"Failed to initialize Database: {e}", exc_info=True)
-    logging.critical("Check the DB_FILE path in db/database.py and database permissions.")
-    sys.exit(1)
 
 
 def handle_client(conn, addr):
@@ -34,6 +29,10 @@ def handle_client(conn, addr):
     request_data_for_pickle_error = None # Store data in case of pickle error
 
     try:
+
+        # Create a new Database instance for this thread.
+        db_handler = Database()
+
         while active_connection: 
             request_data_for_pickle_error = recv_one_message(conn, return_type="bytes")
 
@@ -55,12 +54,12 @@ def handle_client(conn, addr):
 
             response = {}
             try:
-                if hasattr(db, command):
-                    method_to_call = getattr(db, command)
+                if hasattr(db_handler, command):
+                    method_to_call = getattr(db_handler, command)
                     
                     # Special handling for __str__ equivalent if needed
                     if command == 'get_all_users_string': # Matches client
-                        result = str(db) # Calls __str__ on Database instance
+                        result = str(db_handler) # Calls __str__ on Database instance
                     else:
                         result = method_to_call(*args, **kwargs)
                     
@@ -76,9 +75,6 @@ def handle_client(conn, addr):
             # Catch specific custom errors first
             except errors.UserNotFoundError as e: 
                 logging.warning(f"UserNotFoundError for command '{command}' from {addr}: {e}")
-                response['status'] = 'error'; response['message'] = str(e); response['error_type'] = type(e).__name__
-            except errors.DatabaseError as e: # Catch a base custom DB error
-                logging.warning(f"DatabaseError for command '{command}' from {addr}: {e}")
                 response['status'] = 'error'; response['message'] = str(e); response['error_type'] = type(e).__name__
             # Catch standard Python errors that might occur
             except TypeError as e: # Argument mismatches for called methods

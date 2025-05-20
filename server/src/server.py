@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import ssl
 import http_server
@@ -21,13 +22,13 @@ async def shutdown_signal():
         await asyncio.sleep(0.1)  # Yield control back to event loop 
 
 
-async def main():
+async def main(db_server_ip):
 
     print("Starting Server... (press 'q' to stop)\n")
 
     await http_server.start_http_server(HOST, HTTP_PORT, ssl_context)
 
-    server = websocket_controller.Server()
+    server = websocket_controller.Server(db_server_ip)
     async with websockets.serve(server.handle_client, HOST, PORT, ssl=ssl_context):
         await shutdown_signal()
     
@@ -36,4 +37,8 @@ async def main():
     
 
 if __name__ == "__main__":
-    asyncio.run(main())
+
+    if len(sys.argv) < 2:
+        print("Correct args usage: py server.py <DB server IP addr.>")
+    else:
+        asyncio.run(main(sys.argv[1]))

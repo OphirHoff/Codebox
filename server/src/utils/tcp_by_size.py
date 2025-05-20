@@ -1,8 +1,8 @@
 import socket,struct
+import logging
 
 size_header_size = 8
-TCP_DEBUG = True
-
+TCP_DEBUG = False
 
 def __log(prefix, data, max_to_print=100):
     if not TCP_DEBUG:
@@ -13,7 +13,8 @@ def __log(prefix, data, max_to_print=100):
             data_to_log = data_to_log.decode()
         except (UnicodeDecodeError, AttributeError):
             pass
-    print(f"\n{prefix}({len(data)})>>>{data_to_log}")
+    # print(f"\n{prefix}({len(data)})>>>{data_to_log}")
+    logging.info(f"\n{prefix}({len(data)})>>>{data_to_log}")
 
 
 def __recv_amount(sock, size=4):

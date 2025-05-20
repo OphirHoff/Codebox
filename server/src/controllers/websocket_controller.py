@@ -1,11 +1,10 @@
 import websockets
-import requests
 import asyncio
 import base64
 import os
 import json
 import protocol
-from db import database
+from db.remote.database_socket_client import DatabaseSocketClient
 from utils import user_file_manager
 import errors
 import traceback
@@ -16,7 +15,7 @@ from utils.logger import (
     )
 
 # Globals
-db = database.Database()
+# db_client = DatabaseSocketClient()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_TIMEOUT = 60  # seconds
 
@@ -30,11 +29,12 @@ def user_container_id():
 container_id_gen = user_container_id()
 
 class Server:
-    def __init__(self):
+    def __init__(self, db_server_ip):
         self.clients: dict = {}  # websocket -> email
         self.logger = Logger()
         self.logger.configure_logger()
         self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_STARTED)
+        self.db_server_ip = db_server_ip
 
     async def handle_client(self, websocket):
         ip, port = websocket.remote_address
@@ -65,6 +65,7 @@ class ClientHandler:
         self.client_ip = ip
         self.client_port = port
         self.server: Server = server
+        self.db_client = DatabaseSocketClient(self.server.db_server_ip)
         self.logger = Logger(self.client_ip, self.client_port)
         self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
@@ -164,23 +165,23 @@ class ClientHandler:
         try:
             if code == protocol.CODE_REGISTER:
                 email, password = data
-                res = register_user(email, password)
+                res = register_user(email, password, self.db_client)
                 to_send = self.server_create_response(code, res)
             
             elif code == protocol.CODE_LOGIN:
                 email, password = data
-                res = login_user(email, password)
+                res = login_user(email, password, self.db_client)
                 if res:
                     self.server.register_logged_user(self.websocket, email)
                     self.email = email
                 to_send = self.server_create_response(code, res)
 
             elif code == protocol.CODE_GET_FILE:
-                to_send = self.server_create_response(code, get_user_file(self.email, data[0]))
+                to_send = self.server_create_response(code, get_user_file(self.email, data[0], self.db_client))
 
             elif code == protocol.CODE_SAVE_FILE:
                 data: dict = json.loads(data[0])
-                to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"]))
+                to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"], self.db_client))
 
             elif code == protocol.CODE_RUN_FILE:
                 res = await self.run_from_storage(data[0])
@@ -195,12 +196,12 @@ class ClientHandler:
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
-                res = user_storage_add(self.email, data)
+                res = user_storage_add(self.email, data, self.db_client)
                 to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
             
             elif code == protocol.CODE_DELETE_FILE:
                 file_path = data[0]
-                res = user_file_delete(self.email, file_path)
+                res = user_file_delete(self.email, file_path, self.db_client)
                 to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
 
         
@@ -271,7 +272,8 @@ class ClientHandler:
 
     async def run_from_storage(self, path: str) -> int:
         
-        user_id = db.get_user_id(self.email)
+        # user_id = db.get_user_id(self.email)
+        user_id = self.db_client.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
         
         command = [
@@ -350,13 +352,11 @@ class ClientHandler:
             pid = await run_pgrep()
             pid_str = pid.strip().decode('utf-8')  # decode bytes to string
             if pid_str:
-                break
-
-        try:
-            return int(pid_str)  # Convert the PID string to an integer
-        except ValueError:
-            print(f"Error: Failed to convert PID '{pid_str}' to an integer.")
-            return None
+                try:
+                    return int(pid_str)  # Convert the PID string to an integer
+                except ValueError:
+                    self.logger.log_connection_event(Level.LEVEL_ERROR, Event.GENERAL_SERVER_ERROR, message="Failed to fetch pid.")
+                    return None
 
     async def stream_output(self):
         
@@ -428,26 +428,31 @@ class ClientHandler:
         return self.process.returncode is None
 
 
-def register_user(email: str, password: str) -> bool:
-    regi_success = db.add_user(email, password)
+def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> bool:
+    # regi_success = db.add_user(email, password)
+    regi_success = db_conn.add_user(email, password)
 
     if regi_success:
-        user_id: int = db.get_user_id(email)
+        # user_id: int = db.get_user_id(email)
+        user_id: int = db_conn.get_user_id(email)
         user_storage = user_file_manager.UserStorage(user_id)
-        db.set_user_files_struct(email, user_storage)
+        # db.set_user_files_struct(email, user_storage)
+        db_conn.set_user_files_struct(email, user_storage)
         return True
     
     return False
 
 
-def login_user(email: str, password: str) -> str | bool:
+def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str | bool:
     """
     Login succeed: Returns string json of user's files hierarchy 
     \nLogin Failed: Returns False
     """
     try:
-        if db.is_password_ok(email, password):
-            user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+        # if db.is_password_ok(email, password):
+        if db_conn.is_password_ok(email, password):
+            # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+            user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
             return str(user_storage)
         return False
     
@@ -455,9 +460,10 @@ def login_user(email: str, password: str) -> str | bool:
         print(f"Error: {err}")
 
 
-def user_storage_add(email, new_node: str) -> bool:
+def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> bool:
 
-    user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+    # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
 
     create_type: str = new_node[protocol.JsonEntries.NODE_TYPE]
     path: str = new_node[protocol.JsonEntries.NODE_PATH]
@@ -473,15 +479,17 @@ def user_storage_add(email, new_node: str) -> bool:
         # Storage update failed
         return False
     
-    db.set_user_files_struct(email, user_storage)
+    # db.set_user_files_struct(email, user_storage)
+    db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
     return True
 
 
-def user_file_delete(email, file_path: str) -> bool:
+def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bool:
 
-    user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+    # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
+    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
 
     try:
         user_storage.delete_file(file_path)
@@ -490,15 +498,17 @@ def user_file_delete(email, file_path: str) -> bool:
         # Storage update failed
         return False
 
-    db.set_user_files_struct(email, user_storage)
+    # db.set_user_files_struct(email, user_storage)
+    db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
     return True
 
 
-def get_user_file(email, path: str) -> str | bool:
+def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool:
 
-    user_id = db.get_user_id(email)
+    # user_id = db.get_user_id(email)
+    user_id = db_conn.get_user_id(email)
 
     try:
         file_content = user_file_manager.get_file_content(user_id, path)
@@ -507,9 +517,10 @@ def get_user_file(email, path: str) -> str | bool:
         return False
 
 
-def update_user_file(email, path: str, new_content: str) -> bool:
+def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocketClient) -> bool:
 
-    user_id = db.get_user_id(email)
+    # user_id = db.get_user_id(email)
+    user_id = db_conn.get_user_id(email)
 
     try:
         user_file_manager.update_file_content(user_id, path, new_content)
