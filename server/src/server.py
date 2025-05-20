@@ -27,7 +27,7 @@ async def main():
 
     await http_server.start_http_server(HOST, HTTP_PORT, ssl_context)
 
-    server = websocket_controller.Server(PORT)
+    server = websocket_controller.Server()
     async with websockets.serve(server.handle_client, HOST, PORT, ssl=ssl_context):
         await shutdown_signal()
     

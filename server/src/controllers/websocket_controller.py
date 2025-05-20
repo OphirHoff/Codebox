@@ -18,7 +18,7 @@ from utils.logger import (
 # Globals
 db = database.Database()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
-EXECUTION_TIMEOUT = 10  # seconds
+EXECUTION_TIMEOUT = 60  # seconds
 
 def user_container_id():
 
@@ -30,9 +30,7 @@ def user_container_id():
 container_id_gen = user_container_id()
 
 class Server:
-    def __init__(self, port):
-        self.server_ip = requests.get('https://ifconfig.me').text
-        self.server_port = port
+    def __init__(self):
         self.clients: dict = {}  # websocket -> email
         self.logger = Logger()
         self.logger.configure_logger()
@@ -71,7 +69,6 @@ class ClientHandler:
         self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
 
-        # self.container_name = f"{self.client_ip.replace('.', '-')}-{self.client_port}"
         self.container_name = f"n-{next(container_id_gen)}"
         self.container_running = None  # Will be set True when container is running
         self.process = None
@@ -247,7 +244,7 @@ class ClientHandler:
             self.process_ready_event.set()  # To fix - event not needed anymore
 
             await asyncio.gather(
-                self.moniter_input_syscalls(),
+                self.monitor_input(),
                 self.stream_output()
             )
 
@@ -305,7 +302,7 @@ class ClientHandler:
             self.process_ready_event.set()  # To fix - event not needed anymore
 
             await asyncio.gather(
-                self.moniter_input_syscalls(),
+                self.monitor_input(),
                 self.stream_output()
             )
 
@@ -378,7 +375,7 @@ class ClientHandler:
         self.container_running = False
         self.process_ready_event.clear()
     
-    async def moniter_input_syscalls(self):
+    async def monitor_input(self):
         """
         Asynchronously checks if the process is blocked on input from stdin.
         """

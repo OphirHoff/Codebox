@@ -39,9 +39,6 @@ class Database:
     
     def is_password_ok(self, email, password):
 
-        # salt = self.cursor.execute(queries.SELECT_USER_SALT, (email,))
-        # hashed_password = self.cursor.execute(queries.SELECT_USER_PW, (email,))
-
         if not self.is_user_exist(email):
             raise errors.UserNotFoundError(email)
 
