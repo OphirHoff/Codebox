@@ -5,10 +5,13 @@ import db.queries as queries
 import datetime
 import errors
 import os
+import threading
 
 module_path = os.path.dirname(os.path.abspath(__file__))
-print(module_path)
 DB_FILE = f"{module_path}/../../data/users.sqlite"
+
+# Global lock for database access across all instances
+db_lock = threading.Lock()
 
 # indexes
 PW = 0
@@ -26,13 +29,11 @@ class Database:
         self.cursor.execute(queries.CREATE_USER_DATA_TABLE)
 
     def is_user_exist(self, email):
-
         self.cursor.execute(queries.FIND_USER, (email,))
         user = self.cursor.fetchone()
         return bool(user)
     
     def get_user_id(self, email):
-        
         if not self.is_user_exist(email):
             raise errors.UserNotFoundError(email)
 
@@ -41,7 +42,6 @@ class Database:
         return id
     
     def is_password_ok(self, email, password):
-
         if not self.is_user_exist(email):
             raise errors.UserNotFoundError(email)
 
@@ -82,7 +82,6 @@ class Database:
 
 
     def set_user_files_struct(self, email, storage_struct: user_file_manager.UserStorage):
-
         if not self.is_user_exist(email):
             raise errors.UserNotFoundError(email)
         
@@ -92,7 +91,6 @@ class Database:
         self.conn.commit()
 
     def get_user_files_struct(self, email) -> user_file_manager.UserStorage:
-
         if not self.is_user_exist(email):
             raise errors.UserNotFoundError(email)
         
@@ -101,33 +99,33 @@ class Database:
         return pickle.loads(pickled_data)
 
     # ↓  ↓  ↓  ↓  to fix  ↓  ↓  ↓  ↓
-    def reset_password(self, email, new_password):
-        hashed_pw, salt = security.generate_salt_hash(new_password)
-        self.data[email][PW] = hashed_pw
-        self.data[email][SALT] = salt
+    # def reset_password(self, email, new_password):
+    #     hashed_pw, salt = security.generate_salt_hash(new_password)
+    #     self.data[email][PW] = hashed_pw
+    #     self.data[email][SALT] = salt
 
-    def update_securitycode(self, email, code):
-        exp_time = datetime.datetime.now() + datetime.timedelta(minutes=code_expiry)
-        self.data[email][CODE] = (code, exp_time)
+    # def update_securitycode(self, email, code):
+    #     exp_time = datetime.datetime.now() + datetime.timedelta(minutes=code_expiry)
+    #     self.data[email][CODE] = (code, exp_time)
 
-    def delete_user(self, email):
-            del self.data[email]
+    # def delete_user(self, email):
+    #         del self.data[email]
 
-    def is_code_expired(self, email):
-        if self.data[email][CODE] != '':
-            return self.data[email][CODE][1] < datetime.datetime.now()
-        return False
+    # def is_code_expired(self, email):
+    #     if self.data[email][CODE] != '':
+    #         return self.data[email][CODE][1] < datetime.datetime.now()
+    #     return False
 
-    def waiting_for_verify(self, email):
-        if self.data[email][CODE] != '':
-            return self.data[email][CODE][1] > datetime.datetime.now()
+    # def waiting_for_verify(self, email):
+    #     if self.data[email][CODE] != '':
+    #         return self.data[email][CODE][1] > datetime.datetime.now()
 
-    def reset_code_expiry(self, email):
-        self.data[email][CODE] = ''
+    # def reset_code_expiry(self, email):
+    #     self.data[email][CODE] = ''
 
-    def update(self):
-        with open(DB_FILE, 'wb') as file:
-            pickle.dump(self.data, file)
+    # def update(self):
+    #     with open(DB_FILE, 'wb') as file:
+    #         pickle.dump(self.data, file)
 
     def __str__(self):
         self.cursor.execute(queries.SELECT_ALL_USERS)

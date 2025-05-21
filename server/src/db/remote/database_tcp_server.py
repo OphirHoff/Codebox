@@ -8,8 +8,8 @@ import os
 
 # Add the parent directory to sys.path to allow access packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from utils.tcp_by_size import send_one_message, recv_one_message, TCP_DEBUG
-from db.database import Database
+from utils.tcp_by_size import send_one_message, recv_one_message
+from db.database import Database, db_lock
 import errors
 
 
@@ -57,11 +57,12 @@ def handle_client(conn, addr):
                 if hasattr(db_handler, command):
                     method_to_call = getattr(db_handler, command)
                     
-                    # Special handling for __str__ equivalent if needed
-                    if command == 'get_all_users_string': # Matches client
-                        result = str(db_handler) # Calls __str__ on Database instance
-                    else:
-                        result = method_to_call(*args, **kwargs)
+                    with db_lock:
+                        # Special handling for __str__ equivalent if needed
+                        if command == 'get_all_users_string': # Matches client
+                            result = str(db_handler) # Calls __str__ on Database instance
+                        else:
+                            result = method_to_call(*args, **kwargs)
                     
                     response['status'] = 'success'
                     response['data'] = result

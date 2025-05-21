@@ -15,7 +15,6 @@ from utils.logger import (
     )
 
 # Globals
-# db_client = DatabaseSocketClient()
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_TIMEOUT = 60  # seconds
 
@@ -272,7 +271,6 @@ class ClientHandler:
 
     async def run_from_storage(self, path: str) -> int:
         
-        # user_id = db.get_user_id(self.email)
         user_id = self.db_client.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
         
@@ -430,14 +428,11 @@ class ClientHandler:
 
 
 def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> bool:
-    # regi_success = db.add_user(email, password)
     regi_success = db_conn.add_user(email, password)
 
     if regi_success:
-        # user_id: int = db.get_user_id(email)
         user_id: int = db_conn.get_user_id(email)
         user_storage = user_file_manager.UserStorage(user_id)
-        # db.set_user_files_struct(email, user_storage)
         db_conn.set_user_files_struct(email, user_storage)
         return True
     
@@ -450,9 +445,7 @@ def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str 
     \nLogin Failed: Returns False
     """
     try:
-        # if db.is_password_ok(email, password):
         if db_conn.is_password_ok(email, password):
-            # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
             user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
             return str(user_storage)
         return False
@@ -463,7 +456,6 @@ def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str 
 
 def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> bool:
 
-    # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
     user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
 
     create_type: str = new_node[protocol.JsonEntries.NODE_TYPE]
@@ -480,7 +472,6 @@ def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> boo
         # Storage update failed
         return False
     
-    # db.set_user_files_struct(email, user_storage)
     db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
@@ -489,7 +480,6 @@ def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> boo
 
 def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bool:
 
-    # user_storage: user_file_manager.UserStorage = db.get_user_files_struct(email)
     user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
 
     try:
@@ -499,7 +489,6 @@ def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bo
         # Storage update failed
         return False
 
-    # db.set_user_files_struct(email, user_storage)
     db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
@@ -508,7 +497,6 @@ def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bo
 
 def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool:
 
-    # user_id = db.get_user_id(email)
     user_id = db_conn.get_user_id(email)
 
     try:
@@ -520,7 +508,6 @@ def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool
 
 def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocketClient) -> bool:
 
-    # user_id = db.get_user_id(email)
     user_id = db_conn.get_user_id(email)
 
     try:
