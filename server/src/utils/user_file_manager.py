@@ -60,12 +60,9 @@ class UserStorage():
 
         if not file_path.exists():
             raise FileNotFoundError()
-        
-        print("reached here")
 
         file_path.unlink()
         self.update_tree(None, path, remove=True)
-        
         
     def create_dir(self, path: str):
         
