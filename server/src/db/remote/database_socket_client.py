@@ -13,8 +13,6 @@ from utils.logger import (
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 65432
 
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - Client: %(message)s')
-
 class DatabaseSocketClient:
     """
     A client for interacting with the database server over TCP sockets,
@@ -131,20 +129,20 @@ class DatabaseSocketClient:
         """Gets the user's file structure."""
         return self._send_request('get_user_files_struct', email)
 
-    def reset_password(self, email, new_password):
-        """Resets a user's password."""
-        logging.warning("Calling 'reset_password'. Ensure server-side implementation is correct (SQL-based).")
-        return self._send_request('reset_password', email, new_password)
+    # def reset_password(self, email, new_password):
+    #     """Resets a user's password."""
+    #     logging.warning("Calling 'reset_password'. Ensure server-side implementation is correct (SQL-based).")
+    #     return self._send_request('reset_password', email, new_password)
 
     # def update_security_code(self, email, code):
     #     """Updates a user's security code."""
     #     logging.warning("Calling 'update_security_code'. Ensure server-side implementation is correct.")
     #     return self._send_request('update_security_code', email, code)
 
-    def delete_user(self, email):
-        """Deletes a user."""
-        logging.warning("Calling 'delete_user'. Ensure server-side implementation is correct (SQL-based).")
-        return self._send_request('delete_user', email)
+    # def delete_user(self, email):
+    #     """Deletes a user."""
+    #     logging.warning("Calling 'delete_user'. Ensure server-side implementation is correct (SQL-based).")
+    #     return self._send_request('delete_user', email)
 
     # def is_code_expired(self, email):
     #     """Checks if a user's security code has expired."""

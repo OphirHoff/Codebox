@@ -157,6 +157,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		else if (response_code == 'DELR') {
 			showNotification("File was deleted successfully!", 'success');
 		}
+		else if (response_code == 'DNLR') {
+			let content = atob(data[0]);
+			triggerBrowserDownload(content, downloadFileName);
+			showNotification("File was downloaded", 'success');
+		}
 		else if (response_code == 'OUTP') {
 			// Decode (bsae64) output
 			let outputLine = atob(data[0]);
@@ -1722,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		return false;
 	}
 
-    function renameFileAction() {
+	function renameFileAction() {
         if (currentContextMenuFile) {
             const fileNameElement = currentContextMenuFile.querySelector('.file-name');
             const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
@@ -1733,16 +1738,99 @@ document.addEventListener('DOMContentLoaded', function () {
         hideContextMenu();
     }
 
+	// Helper function to rename a file in the file structure
+	function renameFileInStructure(oldFilePath, newFileName) {
+		const pathParts = oldFilePath.split('/');
+		const oldFileName = pathParts.pop(); // Get the file name (last part)
+		
+		// Find the parent directory
+		let current = fileStructure;
+		
+		// Navigate to the parent directory
+		for (const part of pathParts) {
+			const found = current.find(item => item.type === 'folder' && item.name === part);
+			if (found && found.children) {
+				current = found.children;
+			} else {
+				return false; // Path not found
+			}
+		}
+		
+		// Find the file in the parent directory
+		const fileIndex = current.findIndex(item => item.name === oldFileName);
+		if (fileIndex !== -1) {
+			// Update the file name
+			current[fileIndex].name = newFileName;
+			
+			// Update the extension if it's a file
+			if (current[fileIndex].type === 'file') {
+				const extension = newFileName.includes('.') ? newFileName.split('.').pop() : '';
+				current[fileIndex].extension = extension;
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	// Variable to store the name of the file that was asked to download
+	let downloadFileName;
+	
     function downloadFileAction() {
-        if (currentContextMenuFile) {
-            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
-            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
-            console.log(`Download file: ${fileName}`);
-            // TODO: Implement download file logic
-            alert(`Download file: ${fileName} (functionality not yet implemented)`);
+        if (!currentContextMenuFile) {
+            hideContextMenu();
+            return;
         }
+
+        const fileNameElement = currentContextMenuFile.querySelector('.file-name');
+        if (!fileNameElement) {
+            hideContextMenu();
+            return;
+        }
+
+        const fileName = fileNameElement.textContent;
+        // Get file path by traversing the DOM
+        const filePath = [...buildPathFromDom(currentContextMenuFile), fileName].join('/');
+		
+		downloadFileName = fileName;
+
+        // Construct the download request message
+        const downloadRequestMessage = `DNLD~${filePath}`;
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log(`Sending download request for file: ${filePath}`);
+            socket.send(downloadRequestMessage);
+            showNotification(`Requesting download for "${fileName}"...`, 'info');
+        } else {
+            console.error('WebSocket not connected');
+            showNotification('Unable to request file download: Server connection not available', 'error');
+        }
+
         hideContextMenu();
     }
+	
+	function triggerBrowserDownload(content, fileName, contentType = 'application/octet-stream') {
+
+		const blob = new Blob([content], { type: contentType });
+
+		// Create an Object URL for the Blob
+		const url = URL.createObjectURL(blob);
+
+		// Create a temporary anchor element
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = fileName; // Set the desired file name for the download
+
+		// Append the anchor to the body, click it, and then remove it
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+
+		// Revoke the Object URL to free up resources
+		URL.revokeObjectURL(url);
+		console.log(`Download triggered for: ${fileName}`);
+	}
 
     // Add event listeners for context menu buttons
     if (deleteFileBtn) {

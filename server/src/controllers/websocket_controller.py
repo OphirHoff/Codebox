@@ -77,7 +77,7 @@ class ClientHandler:
 
     async def send(self, msg: str) -> None:
         await self.websocket.send(msg)
-        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_SENT, msg[:4])
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_SENT, msg[:20])
     
     async def recv(self):
         msg = await self.websocket.recv()
@@ -135,6 +135,13 @@ class ClientHandler:
                 to_send = protocol.CODE_FILE_DELETED
             else:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_DELETE}"
+
+        elif request == protocol.CODE_DOWNLOAD_FILE:
+            if data or data == '':
+                encoded_data = base64_encode(data).decode()
+                to_send = f"{protocol.CODE_FILE_TO_DOWNLOAD}~{encoded_data}"
+            else:
+                to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
         elif request == protocol.CODE_RUN_SCRIPT or request == protocol.CODE_RUN_FILE:
             
@@ -202,6 +209,11 @@ class ClientHandler:
                 file_path = data[0]
                 res = user_file_delete(self.email, file_path, self.db_client)
                 to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
+
+            elif code == protocol.CODE_DOWNLOAD_FILE:
+                file_path = data[0]
+                res = get_user_file(self.email, file_path, self.db_client)
+                to_send = self.server_create_response(protocol.CODE_DOWNLOAD_FILE, res)
 
         
         except Exception as e:
@@ -494,6 +506,21 @@ def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bo
     # Storage update succeeded
     return True
 
+def user_rename_file(email, old_path, new_path, db_conn: DatabaseSocketClient) -> bool:
+
+    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
+
+    try:
+        user_storage.rename_file(old_path, new_path)
+    except Exception as e:
+        print(f"error: {e}")
+        # File rename failed
+        return False
+
+    db_conn.set_user_files_struct(email, user_storage)
+
+    # File rename succeeded
+    return True
 
 def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool:
 
