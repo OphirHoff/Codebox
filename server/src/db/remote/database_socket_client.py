@@ -13,8 +13,6 @@ from utils.logger import (
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 65432
 
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - Client: %(message)s')
-
 class DatabaseSocketClient:
     """
     A client for interacting with the database server over TCP sockets,
