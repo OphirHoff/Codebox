@@ -286,19 +286,20 @@ class ClientHandler:
             "-v", f"{os.path.abspath(user_path)}:{SANDBOX_WORKDIR}:ro",
             "--name", self.container_name,
             "python_runner",
-            f"timeout {EXECUTION_TIMEOUT}s", "python3", "-u", path
+            "timeout", f"{EXECUTION_TIMEOUT}s", "python3", "-u", path
         ]
         
         async def run_process():
             process = await asyncio.create_subprocess_exec(
                 *command,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT
             )
 
             self.process = process
             await asyncio.sleep(0.1)  # Wait a bit for the process to start
-            self.pid = await self.get_python_pid(self.container_name)
+            self.pid = await self.get_python_pid(self.container_name, code_path=path)
 
             # Signal that the process is ready
             self.process_ready_event.set()  # To fix - event not needed anymore
@@ -322,7 +323,7 @@ class ClientHandler:
             self.logger.log_connection_event(Level.LEVEL_ERROR, Event.EXECUTION_TIMEOUT)
             self.process.kill()
             await self.process.wait()
-            return 202
+            return 3
 
         return returncode
     
@@ -367,7 +368,7 @@ class ClientHandler:
             chunk = await self.process.stdout.read(1024)
             if not chunk:
                 break  # EOF reached
-
+            
             encoded_line = base64_encode(chunk.decode()).decode('utf-8')
             await self.send(self.server_create_response(protocol.CODE_RUN_SCRIPT, (False, encoded_line)))
             
