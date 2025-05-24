@@ -8,11 +8,11 @@ from controllers import websocket_controller
 
 HOST = "0.0.0.0"
 PORT = 8765
-HTTP_PORT = 8080
+HTTP_PORT = 443
 
 # TLS for both WebSocket and HTTP (same certs)
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(certfile="certs/cert.pem", keyfile="certs/key.pem")
+ssl_context.load_cert_chain(certfile="secrets/certs/cert.pem", keyfile="secrets/certs/key.pem")
 
 async def shutdown_signal():
     while True:

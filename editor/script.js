@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 1300);
 
     // WebSocket connection
-    const socket = new WebSocket('wss://icodebox.duckdns.org:8765'); // Replace with your WebSocket server URL
+    const socket = new WebSocket('wss://192.168.1.248:8765'); // Replace with your WebSocket server URL
 
     // Handle WebSocket connection open
     socket.addEventListener('open', () => {

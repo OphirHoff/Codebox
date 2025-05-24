@@ -2,7 +2,7 @@
 
 cd server\src
 
-start cmd /c "py db\remote\database_tcp_server.py"
-py server.py localhost
+start cmd /c "python3 db\remote\database_socket_server.py"
+python3 server.py localhost
 
 cd ..\..

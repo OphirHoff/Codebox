@@ -56,7 +56,6 @@ class UserStorage():
     def delete_file(self, path: str):
 
         file_path = Path(f"{self.folder_name}/{path}")
-        print(f"file path: {file_path}")
 
         if not file_path.exists():
             raise FileNotFoundError()
@@ -99,11 +98,9 @@ class UserStorage():
                     raise FileNotFoundError(f"Path not found: {path}")
 
         if remove:
-            print(current)
             for dir in current:
                 if dir[JsonEntries.NODE_NAME] == to_add:
                     current.remove(dir)
-                    print(current)
                     break
                     
 

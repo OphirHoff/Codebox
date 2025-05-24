@@ -15,6 +15,7 @@ from utils.logger import (
     )
 
 # Globals
+DB_CLIENTS_NUM = 3
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_TIMEOUT = 60  # seconds
 
@@ -35,6 +36,9 @@ class Server:
         self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_STARTED)
         self.db_server_ip = db_server_ip
 
+        # Active connections with DB server
+        self.db_connections = [DatabaseSocketClient(self.db_server_ip) for _ in range(DB_CLIENTS_NUM)]
+
     async def handle_client(self, websocket):
         ip, port = websocket.remote_address
         handler = ClientHandler(websocket, ip, port, self)
@@ -45,6 +49,12 @@ class Server:
 
     def unregister_user(self, websocket):
         self.clients.pop(websocket, None)
+
+    async def get_db_conn(self):
+        while True:
+            for conn in self.db_connections:
+                if not conn.occupied:
+                    return conn
 
     def close(self):
 
@@ -64,7 +74,7 @@ class ClientHandler:
         self.client_ip = ip
         self.client_port = port
         self.server: Server = server
-        self.db_client = DatabaseSocketClient(self.server.db_server_ip)
+        # self.db_client = DatabaseSocketClient(self.server.db_server_ip)
         self.logger = Logger(self.client_ip, self.client_port)
         self.logger.log_connection_event("INFO", "CONN_EST")
         self.email = None  # will be set after login
@@ -171,23 +181,29 @@ class ClientHandler:
         try:
             if code == protocol.CODE_REGISTER:
                 email, password = data
-                res = register_user(email, password, self.db_client)
-                to_send = self.server_create_response(code, res)
+                with await self.server.get_db_conn() as db_conn:
+                    res = register_user(email, password, db_conn)
+                    to_send = self.server_create_response(code, res)
             
             elif code == protocol.CODE_LOGIN:
                 email, password = data
-                res = login_user(email, password, self.db_client)
+                with await self.server.get_db_conn() as db_conn:
+                    res = login_user(email, password, db_conn)
                 if res:
                     self.server.register_logged_user(self.websocket, email)
                     self.email = email
                 to_send = self.server_create_response(code, res)
 
             elif code == protocol.CODE_GET_FILE:
-                to_send = self.server_create_response(code, get_user_file(self.email, data[0], self.db_client))
+                with await self.server.get_db_conn() as db_conn:
+                    file_content = get_user_file(self.email, data[0], db_conn)
+                to_send = self.server_create_response(code, file_content)
 
             elif code == protocol.CODE_SAVE_FILE:
                 data: dict = json.loads(data[0])
-                to_send = self.server_create_response(code, update_user_file(self.email, data["path"], data["content"], self.db_client))
+                with await self.server.get_db_conn() as db_conn:
+                    res = update_user_file(self.email, data["path"], data["content"], db_conn)
+                to_send = self.server_create_response(code, res)
 
             elif code == protocol.CODE_RUN_FILE:
                 res = await self.run_from_storage(data[0])
@@ -202,17 +218,20 @@ class ClientHandler:
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
-                res = user_storage_add(self.email, data, self.db_client)
+                with await self.server.get_db_conn() as db_conn:
+                    res = user_storage_add(self.email, data, db_conn)
                 to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
             
             elif code == protocol.CODE_DELETE_FILE:
                 file_path = data[0]
-                res = user_file_delete(self.email, file_path, self.db_client)
+                with await self.server.get_db_conn() as db_conn:
+                    res = user_file_delete(self.email, file_path, db_conn)
                 to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
 
             elif code == protocol.CODE_DOWNLOAD_FILE:
                 file_path = data[0]
-                res = get_user_file(self.email, file_path, self.db_client)
+                with await self.server.get_db_conn() as db_conn:
+                    res = get_user_file(self.email, file_path, db_conn)
                 to_send = self.server_create_response(protocol.CODE_DOWNLOAD_FILE, res)
 
         
