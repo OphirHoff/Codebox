@@ -1,3 +1,18 @@
+"""
+TCP message handling utilities with size-prefixed protocol implementation.
+
+This module provides two different implementations for sending and receiving TCP messages:
+1. Simple size-prefixed protocol (8-byte header)
+2. Binary size-prefixed protocol (4-byte header, network byte order)
+
+The size-prefixed protocols ensure complete message transmission by sending the message size
+before the actual data. This prevents message boundaries from becoming mixed up.
+
+Constants:
+    size_header_size (int): Size of the header for the simple protocol (8 bytes)
+    TCP_DEBUG (bool): Enable/disable debug logging of TCP operations
+"""
+
 import socket,struct
 import logging
 
@@ -5,6 +20,14 @@ size_header_size = 8
 TCP_DEBUG = False
 
 def __log(prefix, data, max_to_print=100):
+    """
+    Internal debug logging function for TCP operations.
+
+    Args:
+        prefix: Message prefix for the log
+        data: Data to be logged
+        max_to_print: Maximum number of bytes to print (default: 100)
+    """
     if not TCP_DEBUG:
         return
     data_to_log = data[:max_to_print]
@@ -18,6 +41,16 @@ def __log(prefix, data, max_to_print=100):
 
 
 def __recv_amount(sock, size=4):
+    """
+    Internal function to receive exact amount of bytes from socket.
+
+    Args:
+        sock: Socket to receive from
+        size: Number of bytes to receive (default: 4)
+
+    Returns:
+        bytes: Received data or empty bytes if connection closed
+    """
     buffer = b''
     while size:
         new_bufffer = sock.recv(size)
@@ -29,6 +62,16 @@ def __recv_amount(sock, size=4):
 
 
 def recv_by_size(sock, return_type="string"):
+    """
+    Receive a message using simple size-prefixed protocol (8-byte header).
+
+    Args:
+        sock: Socket to receive from
+        return_type: Type of returned data ("string" or "bytes")
+
+    Returns:
+        str or bytes: Received message in specified format
+    """
     try:
         data  = b''
         data_len = int(__recv_amount(sock, size_header_size))
@@ -43,6 +86,13 @@ def recv_by_size(sock, return_type="string"):
 
 
 def send_with_size(sock, data):
+    """
+    Send a message using simple size-prefixed protocol (8-byte header).
+
+    Args:
+        sock: Socket to send through
+        data: Data to send (string or bytes)
+    """
     if len(data) == 0:
         return
     try:
@@ -59,6 +109,12 @@ def send_with_size(sock, data):
 
 
 def __hex(s):
+    """
+    Internal debug function to print hexadecimal representation of string.
+
+    Args:
+        s: String to convert to hex display
+    """
     cnt = 0
     for i in range(len(s)):
         if cnt % 16 == 0:
@@ -76,7 +132,13 @@ Binary Size by 4 bytes   from 1 to 4GB
 """
 def send_one_message(sock, data):
     """
-    Send a message to the socket.
+    Send a message using binary size-prefixed protocol (4-byte header).
+    
+    Uses network byte order for size header.
+
+    Args:
+        sock: Socket to send through
+        data: Data to send (string or bytes)
     """
     #sock.sendall(struct.pack('!I', len(message)) + message)
     try:
@@ -93,7 +155,16 @@ def send_one_message(sock, data):
 
 def recv_one_message(sock, return_type="string"):
     """
-    Recieve one message by two steps 4 bytes and all rest.
+    Receive a message using binary size-prefixed protocol (4-byte header).
+    
+    Uses network byte order for size header.
+
+    Args:
+        sock: Socket to receive from
+        return_type: Type of returned data ("string" or "bytes")
+
+    Returns:
+        str or bytes: Received message in specified format, None if connection closed
     """
     len_section = __recv_amount(sock, 4)
     if not len_section:
@@ -111,64 +182,3 @@ def recv_one_message(sock, return_type="string"):
         return data.decode()
       
     return data
-
-
-
-
-
-
-
-
-"""
-Unit Test Section
-just for test 
-"""
-
-        
-        
-def main_for_test(role):
-    import socket
-    import time
-    port = 12312
-    if role == 'srv':
-        s= socket.socket()
-        s.bind(('0.0.0.0',port))
-        s.listen(1)
-        cli_s , addr = s.accept()
-        data = recv_by_size(cli_s)
-        print ("1 server got:" + data)
-        send_with_size(cli_s,"1 back:" + data)
-        time.sleep(3)
-        
-        
-        print ("\n\n\nServer Binary Sction\n")
-        data = recv_one_message(cli_s)
-        print ("2 server got:" + data)
-        send_one_message(cli_s,"2 back:" + data)
-                
-        cli_s.close()
-        time.sleep(3)
-        s.close()
-    elif role == 'cli':
-        c = socket.socket()
-        c.connect(('127.0.0.1',port))
-        send_with_size(c,"ABC")
-
-        print ("1 client got:" + recv_by_size(c))
-        time.sleep(3)
-        
-        
-        
-        
-        print ("\n\n\nClient Binary Sction\n")
-        send_one_message(c,"abcdefghijklmnop")
-        
-        print ("2 client got:" + recv_one_message(c))
-        time.sleep(3)
-        c.close()
-
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) >= 2 :
-        main_for_test(sys.argv[1])

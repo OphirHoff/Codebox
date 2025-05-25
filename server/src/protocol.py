@@ -1,3 +1,25 @@
+"""
+Protocol definition for client-server communication.
+
+This module defines the message codes used in the communication protocol between
+the client and server components. It includes:
+
+Client to Server codes:
+    - Authentication: Registration and login
+    - File operations: Create, read, save, delete, download
+    - Execution: Run scripts and handle input
+
+Server to Client codes:
+    - Operation responses and confirmations
+    - Error notifications with specific error codes
+
+Error codes are three-digit numbers categorized by their first digit:
+    - 0xx: General errors
+    - 1xx: Authentication errors
+    - 2xx: Execution errors
+    - 3xx: File operation errors
+"""
+
 ### Client --> Server ###
 CODE_REGISTER = 'REGI'
 CODE_LOGIN = 'LOGN'
@@ -43,6 +65,7 @@ ERROR_STORAGE_CREATE = '301'
 ERROR_FILE_DELETE = '302'
 
 class JsonEntries:
+    """Defines JSON field names used in file and directory operations."""
 
     # Create new file / directory
     NODE_TYPE = 'type'

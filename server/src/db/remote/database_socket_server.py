@@ -1,4 +1,22 @@
-# database_tcp_server.py
+"""
+Multi-threaded database server with secure socket communication.
+
+Features:
+- Thread-safe database operations
+- RSA/AES encrypted connections
+- Client session management
+- Structured error handling and logging
+
+Protocol:
+- RSA private key for AES key decryption
+- AES for secure command execution
+- Pickled response serialization
+
+Configuration:
+    Host: 0.0.0.0 (all interfaces)
+    Port: 65432
+    Max Connections: 5
+"""
 import socket
 import pickle
 import threading
@@ -36,7 +54,7 @@ class ClientHandler:
     def _establish_secured_connection(self):
         """
         Establishes a secured connection with client using AES for data encryption,
-        and RSA for key transmitting.
+        and RSA for key exchanging.
         """
         # Receive encrypted AES key from client
         msg = recv_one_message(self.conn, return_type='bytes')

@@ -1,3 +1,50 @@
+"""
+Secure database client implementation using encrypted socket communication.
+
+This module provides a secure client for remote database operations using:
+1. TCP sockets with message framing
+2. Hybrid RSA/AES encryption:
+   - RSA for initial AES key exchange
+   - AES for ongoing secure communication
+3. Pickle for data serialization
+4. Structured logging of all operations
+
+Security Features:
+- RSA public key infrastructure for key exchange
+- AES-256 session encryption
+- Secure connection establishment protocol
+- Connection timeout handling
+
+Communication Protocol:
+1. Initial Connection:
+   - Client connects to server
+   - Generates AES session key
+   - Encrypts AES key with server's RSA public key
+   - Sends encrypted key to server
+   - Receives confirmation
+
+2. Database Operations:
+   - Commands sent as encrypted pickled dictionaries
+   - Server responses include status and data/error info
+   - All messages framed using tcp_by_size protocol
+
+Connection Management:
+- Context manager support for safe resource handling
+- Automatic connection cleanup
+- Connection state tracking
+- Timeout handling
+
+Default Configuration:
+    Host: localhost
+    Port: 65432
+    Timeout: 10 seconds
+
+Requirements:
+    - Server's RSA public key must be available
+    - TCP connectivity to database server
+    - Proper security certificates
+"""
+
 import socket
 import pickle
 import logging
@@ -72,7 +119,7 @@ class DatabaseSocketClient:
     def _establish_secured_connection(self):
         """
         Establishes a secured connection with server using AES for data encryption,
-        and RSA for key transmitting.
+        and RSA for key exchanging.
         """
         # Generate an AES key for the session
         self.aes_key = gen_aes_key()
@@ -125,19 +172,8 @@ class DatabaseSocketClient:
         }
         
         try:
-            # with socket.socket() as sock:
-                
-            # self.sock.settimeout(self.timeout)
-            # self.logger.log_connection_event(Level.LEVEL_INFO, Event.DB_CONNECTION_ESTABLISHED)
-
-            # sock.connect((self.host, self.port))
-            
-            # self._establish_secured_connection(self.sock)
-            
             serialized_payload = pickle.dumps(request_payload)
             
-            # Use send_one_message from tcp_by_size.py
-            # send_one_message(sock, serialized_payload)
             send_secure(self.sock, serialized_payload, self.aes_key)
             self.logger.log_connection_event(Level.LEVEL_INFO, Event.DB_QUERY, message=f"{command} with args: {args}, kwargs: {kwargs}")
 
@@ -171,19 +207,6 @@ class DatabaseSocketClient:
             self.logger.log_connection_event(Level.LEVEL_ERROR, Event.DB_QUERY_FAILED)
             print(traceback.format_exc())
 
-        # except socket.timeout:
-        #     logging.error(f"Connection to {self.host}:{self.port} timed out.")
-        #     raise ConnectionError(f"Connection to {self.host}:{self.port} timed out.")
-        # except socket.error as e:
-        #     logging.error(f"Socket error connecting to {self.host}:{self.port}: {e}")
-        #     raise ConnectionError(f"Socket error: {e}")
-        # except pickle.PickleError as e:
-        #     logging.error(f"Error pickling/unpickling data: {e}. Data received: {received_data[:100] if received_data else 'None'}") # Log part of data
-        #     raise ConnectionError(f"Data serialization/deserialization error: {e}")
-        # except ConnectionError: # Re-raise specific ConnectionErrors
-        #     raise
-
-
     def is_user_exist(self, email):
         """Checks if a user exists."""
         return self._send_request('is_user_exist', email)
@@ -207,36 +230,6 @@ class DatabaseSocketClient:
     def get_user_files_struct(self, email) -> UserStorage:
         """Gets the user's file structure."""
         return self._send_request('get_user_files_struct', email)
-
-    # def reset_password(self, email, new_password):
-    #     """Resets a user's password."""
-    #     logging.warning("Calling 'reset_password'. Ensure server-side implementation is correct (SQL-based).")
-    #     return self._send_request('reset_password', email, new_password)
-
-    # def update_security_code(self, email, code):
-    #     """Updates a user's security code."""
-    #     logging.warning("Calling 'update_security_code'. Ensure server-side implementation is correct.")
-    #     return self._send_request('update_security_code', email, code)
-
-    # def delete_user(self, email):
-    #     """Deletes a user."""
-    #     logging.warning("Calling 'delete_user'. Ensure server-side implementation is correct (SQL-based).")
-    #     return self._send_request('delete_user', email)
-
-    # def is_code_expired(self, email):
-    #     """Checks if a user's security code has expired."""
-    #     logging.warning("Calling 'is_code_expired'. Ensure server-side implementation is correct.")
-    #     return self._send_request('is_code_expired', email)
-
-    # def waiting_for_verify(self, email):
-    #     """Checks if a user is waiting for verification."""
-    #     logging.warning("Calling 'waiting_for_verify'. Ensure server-side implementation is correct.")
-    #     return self._send_request('waiting_for_verify', email)
-
-    # def reset_code_expiry(self, email):
-    #     """Resets a user's code expiry."""
-    #     logging.warning("Calling 'reset_code_expiry'. Ensure server-side implementation is correct.")
-    #     return self._send_request('reset_code_expiry', email)
     
     def get_all_users_string(self):
         """Gets a string representation of all users (for debugging/info)."""

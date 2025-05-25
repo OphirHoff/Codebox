@@ -1,3 +1,33 @@
+"""
+Secure connection utilities implementing hybrid RSA/AES encryption.
+
+This module provides a hybrid encryption system that combines:
+1. RSA (2048-bit) for secure key exchange
+2. AES (256-bit CBC mode) for efficient data encryption
+
+The hybrid approach leverages:
+- RSA's security for exchanging AES keys
+- AES's efficiency for encrypting the actual data stream
+- CBC mode with random IV for enhanced security
+
+Key Features:
+- RSA key generation and storage (PEM format)
+- AES key generation
+- Secure message transmission using AES-CBC
+- Proper padding and IV handling
+- Pickle for serialization of encrypted data
+
+Directory Structure:
+    secrets/
+        keys/
+            private_key.pem - RSA private key
+            public_key.pem  - RSA public key
+
+Dependencies:
+    - pycryptodome for cryptographic operations
+    - pickle for data serialization
+"""
+
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.Random import get_random_bytes

@@ -1,3 +1,27 @@
+"""
+Structured logging system for server operations and connections.
+
+This module implements a comprehensive logging system that provides:
+- Structured log format with consistent columns
+- Multiple log files for different concerns
+- WebSocket-specific error logging
+- Optional console output (controlled via environment)
+
+Log Files:
+    ../logs/
+        connections.log    - Main connection and operation logs
+        websocket_errors.log - WebSocket-specific errors
+        error.log         - General error logging
+
+Log Format:
+    | Timestamp          | Level   | Event      | Client IP    | Port  | Data
+    Example:
+    [-] 2024-01-01T12:00:00Z | INFO    | CONN_EST   | 192.168.1.1   | 8080  | Connected
+
+Environment Variables:
+    PRINT_NETWORK_LOGS: "true"/"false" - Enable console output of logs
+"""
+
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
@@ -10,11 +34,31 @@ HEADER = f"  | {'Timestamp':<20} | {'Level':<7} | {'Event':<12} | {'Client IP':<
 HEADER += '~'*len(HEADER)
 
 class Level:
+    """Log level constants for consistent level naming."""
     LEVEL_INFO = 'INFO'
     LEVEL_WARNING = 'WARNING'
     LEVEL_ERROR = 'ERROR'
 
 class Event:
+    """
+    Event type constants for standardized event logging.
+    
+    Server Events:
+        SRV_START/CLOSE - Server lifecycle events
+        CONN_EST/DISCONNECT - Connection handling
+        
+    Message Events:
+        MSG_SENT/RECEIVED - Communication logging
+        EXEC_TIMEOUT - Script execution issues
+        
+    Database Events:
+        DB_CONNECT/CONN_ERR - Database connection status
+        DB_QUERY/RESPONSE - Database operations
+        DB_QUERY_F - Failed database operations
+        
+    Error Events:
+        SERVER_ERROR - General server issues
+    """
     SERVER_STARTED = 'SRV_START'
     SERVER_CLOSED = 'SRV_CLOSE'
     CONNECTION_ESTABLISHED = 'CONN_EST'
@@ -32,15 +76,37 @@ class Event:
 
 
 class Logger:
+    """
+    Structured logger for server operations with consistent formatting.
+    
+    Features:
+    - Configurable console output
+    - Structured log format
+    - Multiple log destinations
+    - Level-based formatting
+    """
 
     def __init__(self, client_ip='N/A', client_port='N/A'):
+        """
+        Initialize logger with client information.
+
+        Args:
+            client_ip: IP address of the client (default: 'N/A')
+            client_port: Port number of the client connection (default: 'N/A')
+        """
         self.client_ip = client_ip
         self.client_port = client_port
         load_dotenv()
         self.LOG_TO_CONSOLE = os.getenv("PRINT_NETWORK_LOGS", "false").lower() == "true"
 
     def configure_logger(self):
-
+        """
+        Configure logging system with file handlers and formatters.
+        
+        - Creates log files if they don't exist
+        - Sets up WebSocket error logging
+        - Configures console output if enabled
+        """
         if not os.path.exists(CONNECTION_LOG_FILE) or os.path.getsize(CONNECTION_LOG_FILE) == 0:
             with open(CONNECTION_LOG_FILE, 'w') as log_file:
                 # Write the header (column titles)
@@ -48,7 +114,6 @@ class Logger:
         
         if self.LOG_TO_CONSOLE:
             print(HEADER)
-        
 
         logging.basicConfig(
             filename=CONNECTION_LOG_FILE,
@@ -68,7 +133,20 @@ class Logger:
 
     def log_connection_event(self, level, event, message='N/A'):
         """
-        Logs events related to server-client connections in a structured format.
+        Log a connection event with consistent formatting.
+
+        Args:
+            level: Log level from Level class
+            event: Event type from Event class
+            message: Additional event information (default: 'N/A')
+            
+        Format:
+            [symbol] timestamp | level | event | client_ip | port | message
+            
+        Symbols:
+            [-] Info
+            [!] Warning
+            [x] Error
         """
         # Map log levels to symbols for clarity
         level_symbol = {
