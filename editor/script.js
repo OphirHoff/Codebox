@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmCreateBtn = document.getElementById('confirm-create-btn');
 	const contextMenu = document.getElementById('context-menu');
     const deleteFileBtn = document.getElementById('delete-file-btn');
-    const renameFileBtn = document.getElementById('rename-file-btn');
     const downloadFileBtn = document.getElementById('download-file-btn');
     let currentContextMenuFile = null; // To store the file element that was right-clicked
 	let monacoEditor;
@@ -1726,53 +1725,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		
 		return false;
 	}
-
-	function renameFileAction() {
-        if (currentContextMenuFile) {
-            const fileNameElement = currentContextMenuFile.querySelector('.file-name');
-            const fileName = fileNameElement ? fileNameElement.textContent : 'unknown file';
-            console.log(`Rename file: ${fileName}`);
-            // TODO: Implement rename file logic
-            alert(`Rename file: ${fileName} (functionality not yet implemented)`);
-        }
-        hideContextMenu();
-    }
-
-	// Helper function to rename a file in the file structure
-	function renameFileInStructure(oldFilePath, newFileName) {
-		const pathParts = oldFilePath.split('/');
-		const oldFileName = pathParts.pop(); // Get the file name (last part)
-		
-		// Find the parent directory
-		let current = fileStructure;
-		
-		// Navigate to the parent directory
-		for (const part of pathParts) {
-			const found = current.find(item => item.type === 'folder' && item.name === part);
-			if (found && found.children) {
-				current = found.children;
-			} else {
-				return false; // Path not found
-			}
-		}
-		
-		// Find the file in the parent directory
-		const fileIndex = current.findIndex(item => item.name === oldFileName);
-		if (fileIndex !== -1) {
-			// Update the file name
-			current[fileIndex].name = newFileName;
-			
-			// Update the extension if it's a file
-			if (current[fileIndex].type === 'file') {
-				const extension = newFileName.includes('.') ? newFileName.split('.').pop() : '';
-				current[fileIndex].extension = extension;
-			}
-			
-			return true;
-		}
-		
-		return false;
-	}
 	
 	// Variable to store the name of the file that was asked to download
 	let downloadFileName;
@@ -1835,9 +1787,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add event listeners for context menu buttons
     if (deleteFileBtn) {
         deleteFileBtn.addEventListener('click', deleteFileAction);
-    }
-    if (renameFileBtn) {
-        renameFileBtn.addEventListener('click', renameFileAction);
     }
     if (downloadFileBtn) {
         downloadFileBtn.addEventListener('click', downloadFileAction);
