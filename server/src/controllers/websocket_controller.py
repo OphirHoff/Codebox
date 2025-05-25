@@ -869,4 +869,5 @@ def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocket
         return True
     except Exception as e:
         print(f"error: {e}")
+        return False
     
