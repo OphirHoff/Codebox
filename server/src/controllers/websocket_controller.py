@@ -514,8 +514,12 @@ class ClientHandler:
         Returns:
             int: Process return code
         """
+
+        # Retrieve a database connection
+        db_conn = await self.server.get_db_conn()
+
         # Get the user's storage directory path
-        user_id = self.db_client.get_user_id(self.email)
+        user_id = db_conn.get_user_id(self.email)
         user_path = user_file_manager.user_folder_name(user_id)
         
         # Build docker run command with security constraints
