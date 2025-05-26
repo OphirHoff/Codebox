@@ -39,10 +39,12 @@ async def main(db_server_ip: str):
     await http_server.start_http_server(HOST, HTTP_PORT, ssl_context)
 
     server = websocket_controller.Server(db_server_ip)
+    await server.initialize_db_connections()
+    
     async with websockets.serve(server.handle_client, HOST, PORT, ssl=ssl_context):
         await shutdown_signal()
     
-    server.close()
+    await server.close()
     print("\nServer closed.")
     
 

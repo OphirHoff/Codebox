@@ -33,6 +33,8 @@ from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 
+from utils.async_tcp_by_size import send_one_message as async_send_one_message
+from utils.async_tcp_by_size import recv_one_message as async_recv_one_message
 from utils.tcp_by_size import send_one_message, recv_one_message
 
 import pickle
@@ -116,7 +118,7 @@ def aes_decrypt(cipher, aes_key, iv):
     return decrypted_data
 
 def send_secure(sock, data, aes_key):
-    """Encryptes data to send with AES and sends."""
+    """Encrypts data to send with AES and sends using synchronous socket."""
     enc_data, iv = aes_encrypt(data, aes_key)
     to_send = {
         'data': enc_data,
@@ -126,8 +128,34 @@ def send_secure(sock, data, aes_key):
     send_one_message(sock, pickle.dumps(to_send))
 
 def recv_secure(sock, aes_key):
-    """Receives AES-encrypted data and decryptes."""
+    """Receives AES-encrypted data and decrypts using synchronous socket."""
     msg = recv_one_message(sock, return_type='bytes')
+    if msg is None:
+        return None
+
+    # Extract encrypted data and iv from message
+    data = pickle.loads(msg)
+    enc_data = data.get('data')
+    iv = data.get('iv')
+
+    # return decrypted data
+    return aes_decrypt(enc_data, aes_key, iv)
+
+async def send_secure_async(writer, data, aes_key):
+    """Encrypts data to send with AES and sends using async writer."""
+    enc_data, iv = aes_encrypt(data, aes_key)
+    to_send = {
+        'data': enc_data,
+        'iv': iv
+    }
+
+    await async_send_one_message(writer, pickle.dumps(to_send))
+
+async def recv_secure_async(reader, aes_key):
+    """Receives AES-encrypted data and decrypts using async reader."""
+    msg = await async_recv_one_message(reader, return_type='bytes')
+    if msg is None:
+        return None
 
     # Extract encrypted data and iv from message
     data = pickle.loads(msg)

@@ -157,7 +157,7 @@ class Logger:
 
         timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         message = message.replace('\n', '')
-        log_message = f"{level_symbol} {timestamp:<20} | {level:<7} | {event:<12} | {self.client_ip:<15} | {self.client_port:<5} | {message:.20s}"
+        log_message = f"{level_symbol} {timestamp:<20} | {level:<7} | {event:<12} | {self.client_ip:<15} | {self.client_port:<5} | {message:.35s}"
         # Log the event based on its level
         log_function = getattr(logging, level.lower(), logging.info)
         log_function(log_message)

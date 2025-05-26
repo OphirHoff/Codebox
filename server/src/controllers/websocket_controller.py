@@ -67,6 +67,7 @@ DB_CLIENTS_NUM = 3
 SANDBOX_WORKDIR = '/home/sandboxuser/app'
 EXECUTION_TIMEOUT = 60  # seconds
 
+
 def user_container_id():
     """Generator function that produces unique container IDs."""
     id = 0
@@ -100,15 +101,23 @@ class Server:
         Args:
             db_server_ip (str): IP address of the database server
         """
-        self.clients: dict = {}  # websocket -> email
+        self.active_clients: dict = {}  # websocket -> email
         self.logger = Logger()
         self.logger.configure_logger()
         self.logger.log_connection_event(Level.LEVEL_INFO, Event.SERVER_STARTED)
         self.db_server_ip = db_server_ip
 
         # Active connections with DB server
+        self.db_connections = []
+        
+    async def initialize_db_connections(self):
+        """Initialize the database connection pool."""
+        # Create connection pool
         self.db_connections = [DatabaseSocketClient(self.db_server_ip) for _ in range(DB_CLIENTS_NUM)]
 
+        # Initialize connections
+        await asyncio.gather(*(conn.init_connection() for conn in self.db_connections))
+            
     async def handle_client(self, websocket):
         """
         Handle a new WebSocket client connection.
@@ -118,6 +127,10 @@ class Server:
         Args:
             websocket (WebSocketServerProtocol): The WebSocket connection to handle
         """
+        # Register new client
+        self.active_clients[websocket] = None
+
+        # Pass control to client handler
         ip, port = websocket.remote_address
         handler = ClientHandler(websocket, ip, port, self)
         await handler.handle()
@@ -130,7 +143,7 @@ class Server:
             websocket (WebSocketServerProtocol): The user's WebSocket connection
             email (str): The user's email address
         """
-        self.clients[websocket] = email
+        self.active_clients[websocket] = email
 
     def unregister_user(self, websocket):
         """
@@ -139,7 +152,7 @@ class Server:
         Args:
             websocket (WebSocketServerProtocol): The WebSocket connection to remove
         """
-        self.clients.pop(websocket, None)
+        self.active_clients.pop(websocket, None)
 
     async def get_db_conn(self):
         """
@@ -155,16 +168,22 @@ class Server:
             for conn in self.db_connections:
                 if not conn.occupied:
                     return conn
+            await asyncio.sleep(0.1)  # Add a small delay to prevent busy waiting
 
-    def close(self):
+    async def close(self):
         """
         Close the server and all active client connections.
         
         Logs the closure of each connection and the server shutdown.
         """
-        for sock in self.clients:
+        # Close all database connections
+        for conn in self.db_connections:
+            await conn.close_connection()
+
+        # Close all websocket connections
+        for sock in self.active_clients:
             try:
-                sock.close()
+                await sock.close()
                 self.logger.log_connection_event(Level.LEVEL_INFO, Event.CONNECTION_CLOSED, msg=sock.remote_address)
             except websockets.exceptions.WebSocketException:
                 self.logger.log_connection_event(Level.LEVEL_ERROR, Event.DISCONNECT_FAILED, msg=sock.remote_address)
@@ -225,7 +244,7 @@ class ClientHandler:
             msg (str): Message to send
         """
         await self.websocket.send(msg)
-        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_SENT, msg[:20])
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_SENT, msg)
     
     async def recv(self):
         """
@@ -235,7 +254,7 @@ class ClientHandler:
             str: The received message
         """
         msg = await self.websocket.recv()
-        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_RECEIVED, msg[:20])
+        self.logger.log_connection_event(Level.LEVEL_INFO, Event.MESSAGE_RECEIVED, msg)
         return msg
 
     async def handle(self):
@@ -294,7 +313,7 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_STORAGE_CREATE}"
 
         elif request == protocol.CODE_GET_FILE:
-            if data or data == '':  # File exists (data == '' to support empty files)
+            if data or data == '':  # data == '' to support empty files)
                 encoded_data = base64_encode(data).decode()
                 to_send = f"{protocol.CODE_FILE_CONTENT}~{encoded_data}"
             else:  # File wasn't found
@@ -358,28 +377,28 @@ class ClientHandler:
         try:
             if code == protocol.CODE_REGISTER:
                 email, password = data
-                with await self.server.get_db_conn() as db_conn:
-                    res = register_user(email, password, db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await register_user(email, password, db_conn)
                     to_send = self.server_create_response(code, res)
             
             elif code == protocol.CODE_LOGIN:
                 email, password = data
-                with await self.server.get_db_conn() as db_conn:
-                    res = login_user(email, password, db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await login_user(email, password, db_conn)
                 if res:
                     self.server.register_logged_user(self.websocket, email)
                     self.email = email
                 to_send = self.server_create_response(code, res)
 
             elif code == protocol.CODE_GET_FILE:
-                with await self.server.get_db_conn() as db_conn:
-                    file_content = get_user_file(self.email, data[0], db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    file_content = await get_user_file(self.email, data[0], db_conn)
                 to_send = self.server_create_response(code, file_content)
 
             elif code == protocol.CODE_SAVE_FILE:
                 data: dict = json.loads(data[0])
-                with await self.server.get_db_conn() as db_conn:
-                    res = update_user_file(self.email, data["path"], data["content"], db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await update_user_file(self.email, data["path"], data["content"], db_conn)
                 to_send = self.server_create_response(code, res)
 
             elif code == protocol.CODE_RUN_FILE:
@@ -395,20 +414,20 @@ class ClientHandler:
 
             elif code == protocol.CODE_STORAGE_ADD:
                 data: dict = json.loads(data[0])
-                with await self.server.get_db_conn() as db_conn:
-                    res = user_storage_add(self.email, data, db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await user_storage_add(self.email, data, db_conn)
                 to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
             
             elif code == protocol.CODE_DELETE_FILE:
                 file_path = data[0]
-                with await self.server.get_db_conn() as db_conn:
-                    res = user_file_delete(self.email, file_path, db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await user_file_delete(self.email, file_path, db_conn)
                 to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
 
             elif code == protocol.CODE_DOWNLOAD_FILE:
                 file_path = data[0]
-                with await self.server.get_db_conn() as db_conn:
-                    res = get_user_file(self.email, file_path, db_conn)
+                async with await self.server.get_db_conn() as db_conn:
+                    res = await get_user_file(self.email, file_path, db_conn)
                 to_send = self.server_create_response(protocol.CODE_DOWNLOAD_FILE, res)
 
             elif code == protocol.CODE_LOGOUT:
@@ -516,10 +535,10 @@ class ClientHandler:
         """
 
         # Retrieve a database connection
-        db_conn = await self.server.get_db_conn()
-
-        # Get the user's storage directory path
-        user_id = db_conn.get_user_id(self.email)
+        async with await self.server.get_db_conn() as db_conn:
+            # Get the user's storage directory path
+            user_id = await db_conn.get_user_id(self.email)
+            
         user_path = user_file_manager.user_folder_name(user_id)
         
         # Build docker run command with security constraints
@@ -702,7 +721,7 @@ class ClientHandler:
         return self.process.returncode is None
 
 
-def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> bool:
+async def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> bool:
     """
     Register a new user in the system.
     
@@ -717,18 +736,18 @@ def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> b
     Returns:
         bool: True if registration successful, False if user already exists
     """
-    regi_success = db_conn.add_user(email, password)
+    regi_success = await db_conn.add_user(email, password)
 
     if regi_success:
-        user_id: int = db_conn.get_user_id(email)
+        user_id: int = await db_conn.get_user_id(email)
         user_storage = user_file_manager.UserStorage(user_id)
-        db_conn.set_user_files_struct(email, user_storage)
+        await db_conn.set_user_files_struct(email, user_storage)
         return True
     
     return False
 
 
-def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str | bool:
+async def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str | bool:
     """
     Authenticate a user and retrieve their file structure.
     
@@ -742,18 +761,17 @@ def login_user(email: str, password: str, db_conn: DatabaseSocketClient) -> str 
                    False if login failed
     """
     try:
-        if db_conn.is_password_ok(email, password):
-            user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
+        if await db_conn.is_password_ok(email, password):
+            user_storage: user_file_manager.UserStorage = await db_conn.get_user_files_struct(email)
             return str(user_storage)
         return False
     
     except Exception as err:
-        # Login failed
         print(f"Error: {err}")
         return False
 
 
-def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> bool:
+async def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> bool:
     """
     Add a new file or folder to user's storage.
     
@@ -765,7 +783,7 @@ def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> boo
     Returns:
         bool: True if creation successful, False otherwise
     """
-    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
+    user_storage: user_file_manager.UserStorage = await db_conn.get_user_files_struct(email)
 
     create_type: str = new_node[protocol.JsonEntries.NODE_TYPE]
     path: str = new_node[protocol.JsonEntries.NODE_PATH]
@@ -781,13 +799,13 @@ def user_storage_add(email, new_node: str, db_conn: DatabaseSocketClient) -> boo
         # Storage update failed
         return False
     
-    db_conn.set_user_files_struct(email, user_storage)
+    await db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
     return True
 
 
-def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bool:
+async def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bool:
     """
     Delete a file from user's storage.
     
@@ -799,7 +817,7 @@ def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bo
     Returns:
         bool: True if deletion successful, False otherwise
     """
-    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
+    user_storage: user_file_manager.UserStorage = await db_conn.get_user_files_struct(email)
 
     try:
         user_storage.delete_file(file_path)
@@ -808,13 +826,13 @@ def user_file_delete(email, file_path: str, db_conn: DatabaseSocketClient) -> bo
         # Storage update failed
         return False
 
-    db_conn.set_user_files_struct(email, user_storage)
+    await db_conn.set_user_files_struct(email, user_storage)
 
     # Storage update succeeded
     return True
 
 
-def user_rename_file(email, old_path, new_path, db_conn: DatabaseSocketClient) -> bool:
+async def user_rename_file(email, old_path, new_path, db_conn: DatabaseSocketClient) -> bool:
     """
     Rename a file in user's storage.
     
@@ -827,7 +845,7 @@ def user_rename_file(email, old_path, new_path, db_conn: DatabaseSocketClient) -
     Returns:
         bool: True if rename successful, False otherwise
     """
-    user_storage: user_file_manager.UserStorage = db_conn.get_user_files_struct(email)
+    user_storage: user_file_manager.UserStorage = await db_conn.get_user_files_struct(email)
 
     try:
         user_storage.rename_file(old_path, new_path)
@@ -836,13 +854,13 @@ def user_rename_file(email, old_path, new_path, db_conn: DatabaseSocketClient) -
         # File rename failed
         return False
 
-    db_conn.set_user_files_struct(email, user_storage)
+    await db_conn.set_user_files_struct(email, user_storage)
 
     # File rename succeeded
     return True
 
 
-def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool:
+async def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool:
     """
     Retrieve contents of a file from user's storage.
     
@@ -854,7 +872,7 @@ def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool
     Returns:
         str | bool: File contents if successful, False if file not found
     """
-    user_id = db_conn.get_user_id(email)
+    user_id = await db_conn.get_user_id(email)
 
     try:
         file_content = user_file_manager.get_file_content(user_id, path)
@@ -864,7 +882,7 @@ def get_user_file(email, path: str, db_conn: DatabaseSocketClient) -> str | bool
         return False
 
 
-def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocketClient) -> bool:
+async def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocketClient) -> bool:
     """
     Update the contents of a file in user's storage.
     
@@ -877,7 +895,7 @@ def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocket
     Returns:
         bool: True if update successful, False if file not found
     """
-    user_id = db_conn.get_user_id(email)
+    user_id = await db_conn.get_user_id(email)
 
     try:
         user_file_manager.update_file_content(user_id, path, new_content)
@@ -885,4 +903,3 @@ def update_user_file(email, path: str, new_content: str, db_conn: DatabaseSocket
     except Exception as e:
         print(f"error: {e}")
         return False
-    
