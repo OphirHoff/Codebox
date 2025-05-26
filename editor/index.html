@@ -1,131 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
-   <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Codebox</title>
-      <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-      <link rel="stylesheet" href="styles\styles.css">
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Montserrat:wght@500&family=Iosevka&display=swap" rel="stylesheet">
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-   </head>
-   <body>
-      <div id="loading-container">
-         <div class="throbber"></div>
-         <p>Connecting to server...</p>
-      </div>
-      <!-- Error Message Container -->
-      <div id="error-message" class="hidden">
-         <p>Unable to connect to the server. Please check your connection.</p>
-         <button id="try-again-button">Try Again</button>
-      </div>
-      <button id="menu-btn" class="menu-button" disabled>
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Codebox</title>
+   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+   <link rel="stylesheet" href="styles\styles.css">
+   <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Montserrat:wght@500&family=Iosevka&display=swap"
+      rel="stylesheet">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+</head>
+
+<body>
+   <div id="loading-container">
+      <div class="throbber"></div>
+      <p>Connecting to server...</p>
+   </div>
+   <!-- Error Message Container -->
+   <div id="error-message" class="hidden">
+      <p>Unable to connect to the server. Please check your connection.</p>
+      <button id="try-again-button">Try Again</button>
+   </div>
+   <button id="menu-btn" class="menu-button" disabled>
       <i class="fas fa-bars"></i>
-      </button>
-      <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
-      <!-- Create New File/Folder Modal -->
-      <div id="create-modal" class="create-modal hidden">
-         <div class="create-modal-content">
-            <h4 id="create-modal-title">
-               <i id="create-modal-icon" class="fas"></i>
-               <span id="create-modal-text">New File</span>
-            </h4>
-            <input type="text" id="create-name-input" placeholder="Enter name..." />
-            <div class="create-modal-actions">
-               <button id="cancel-create-btn" class="cancel-btn">Cancel</button>
-               <button id="confirm-create-btn" class="create-btn">Create</button>
-            </div>
+   </button>
+   <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+   <!-- Create New File/Folder Modal -->
+   <div id="create-modal" class="create-modal hidden">
+      <div class="create-modal-content">
+         <h4 id="create-modal-title">
+            <i id="create-modal-icon" class="fas"></i>
+            <span id="create-modal-text">New File</span>
+         </h4>
+         <input type="text" id="create-name-input" placeholder="Enter name..." />
+         <div class="create-modal-actions">
+            <button id="cancel-create-btn" class="cancel-btn">Cancel</button>
+            <button id="confirm-create-btn" class="create-btn">Create</button>
          </div>
       </div>
-      <div id="sidebar" class="sidebar">
-         <div class="sidebar-header">
-            <h3><i class="fas fa-folder"></i> Files</h3>
-            <div class="sidebar-actions">
-               <button id="new-file-btn" class="sidebar-action-btn" title="New File">
+   </div>
+   <div id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+         <h3><i class="fas fa-folder"></i> Files</h3>
+         <div class="sidebar-actions">
+            <button id="new-file-btn" class="sidebar-action-btn" title="New File">
                <i class="fas fa-file-plus"></i>
-               </button>
-               <button id="new-folder-btn" class="sidebar-action-btn" title="New Folder">
+            </button>
+            <button id="new-folder-btn" class="sidebar-action-btn" title="New Folder">
                <i class="fas fa-folder-plus"></i>
-               </button>
-               <button id="close-sidebar-btn">
+            </button>
+            <button id="close-sidebar-btn">
                <i class="fas fa-times"></i>
-               </button>
-            </div>
+            </button>
          </div>
-         <div class="sidebar-content">
-            <div class="file-tree">
-               <div class="folder-item root-folder">
-                  <div class="folder-header">
-                     <i class="fas fa-folder"></i>
-                     <span class="folder-name">your_files</span>
-                     <i class="fas fa-chevron-down folder-toggle"></i>
-                  </div>
-                  <div class="folder-contents">
-                     <!-- Folder contents will be populated here -->
-                  </div>
+      </div>
+      <div class="sidebar-content">
+         <div class="file-tree">
+            <div class="folder-item root-folder">
+               <div class="folder-header">
+                  <i class="fas fa-folder"></i>
+                  <span class="folder-name">your_files</span>
+                  <i class="fas fa-chevron-down folder-toggle"></i>
+               </div>
+               <div class="folder-contents">
+                  <!-- Folder contents will be populated here -->
                </div>
             </div>
-            <div id="context-menu" class="context-menu hidden">
-               <ul>
-                  <li id="delete-file-btn"><i class="fas fa-trash-alt"></i> Delete File</li>
-                  <!-- <li id="rename-file-btn"><i class="fas fa-edit"></i> Rename File</li> -->
-                  <li id="download-file-btn"><i class="fas fa-download"></i> Download File</li>
-               </ul>
-            </div>
+         </div>
+         <div id="context-menu" class="context-menu hidden">
+            <ul>
+               <li id="delete-file-btn"><i class="fas fa-trash-alt"></i> Delete File</li>
+               <!-- <li id="rename-file-btn"><i class="fas fa-edit"></i> Rename File</li> -->
+               <li id="download-file-btn"><i class="fas fa-download"></i> Download File</li>
+            </ul>
          </div>
       </div>
-      <header>
-         <div class="title-container">
-            <h1>Codebox</h1>
-            <h2>Web Code Editor</h2>
+   </div>
+   <header>
+      <div class="title-container">
+         <h1>Codebox</h1>
+         <h2>Web Code Editor</h2>
+      </div>
+      <div class="controls">
+         <div class="font-controls">
+            <button id="decrease-font"><span class="font-icon">A</span><i class="fas fa-minus"></i></button>
+            <button id="increase-font"><span class="font-icon">A</span><i class="fas fa-plus"></i></button>
          </div>
-         <div class="controls">
-            <div class="font-controls">
-               <button id="decrease-font"><span class="font-icon">A</span><i class="fas fa-minus"></i></button>
-               <button id="increase-font"><span class="font-icon">A</span><i class="fas fa-plus"></i></button>
-            </div>
-            <button id="run-btn"><i class="fas fa-play"></i> Run</button>
-            <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
-         </div>
-         <button id="auth-btn" class="auth-button">
+         <button id="run-btn"><i class="fas fa-play"></i> Run</button>
+         <button id="fullscreen-btn"><i class="fas fa-expand"></i></button>
+      </div>
+      <button id="auth-btn" class="auth-button">
          <i class="fas fa-user"></i> Login / Register
-         </button>
-         <div id="auth-modal" class="modal hidden">
-            <div class="modal-content">
-               <h3><i class="fas fa-user-circle"></i> Login</h3>
-               <form id="auth-form">
-                  <div class="form-group">
-                     <label for="email">Email:</label>
-                     <input type="email" id="email" required>
-                  </div>
-                  <div class="form-group">
-                     <label for="password">Password:</label>
-                     <input type="password" id="password" required>
-                  </div>
-                  <div class="buttons-container">
-                     <button type="submit" class="login-btn">Login</button>
-                     <button type="submit" class="register-btn">Register</button>
-                  </div>
-               </form>
-            </div>
-         </div>
-      </header>
-      <div class="editor-container">
-         <div id="current-file-display" class="current-file-display hidden">
-            <i class="fas fa-file-code"></i>
-            <span id="current-file-name">No file selected</span>
-         </div>
-         <div class="code-editor">
-            <!-- <div id="line-numbers"></div> -->
-            <div id="editor" ></div>
-            <button id="exit-fullscreen-btn" class="hidden"><i class="fas fa-compress"></i> Exit Full Screen</button>
-         </div>
-         <div class="output-container">
-            <h3>Output</h3>
-            <iframe id="output"></iframe>
+      </button>
+      <div id="auth-modal" class="modal hidden">
+         <div class="modal-content">
+            <h3><i class="fas fa-user-circle"></i> Login</h3>
+            <form id="auth-form">
+               <div class="form-group">
+                  <label for="email">Email:</label>
+                  <input type="email" id="email" required>
+               </div>
+               <div class="form-group">
+                  <label for="password">Password:</label>
+                  <input type="password" id="password" required>
+               </div>
+               <div class="buttons-container">
+                  <button type="submit" class="login-btn">Login</button>
+                  <button type="submit" class="register-btn">Register</button>
+               </div>
+            </form>
          </div>
       </div>
-      <script src="script.js"></script>
-   </body>
+   </header>
+   <div class="editor-container">
+      <div id="current-file-display" class="current-file-display hidden">
+         <i class="fas fa-file-code"></i>
+         <span id="current-file-name">No file selected</span>
+      </div>
+      <div class="code-editor">
+         <!-- <div id="line-numbers"></div> -->
+         <div id="editor"></div>
+         <button id="exit-fullscreen-btn" class="hidden"><i class="fas fa-compress"></i> Exit Full Screen</button>
+      </div>
+      <div class="output-container">
+         <h3>Output</h3>
+         <iframe id="output"></iframe>
+      </div>
+   </div>
+   <script src="script.js"></script>
+</body>
+
 </html>
