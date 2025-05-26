@@ -73,7 +73,7 @@ class Event:
     DB_RESPONSE = 'DB_RESPONSE'
     DB_QUERY_FAILED = 'DB_QUERY_F'
     GENERAL_SERVER_ERROR = 'SERVER_ERROR'
-
+    USER_LOGOUT = 'LOGOUT'
 
 class Logger:
     """

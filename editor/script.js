@@ -561,6 +561,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		userEmailDisplay.className = 'user-email-display';
 		userEmailDisplay.innerHTML = `<i class="fas fa-user"></i> ${email}`;
 
+		// Create logout button
+		const logoutButton = document.createElement('button');
+		logoutButton.id = 'logout-btn';
+		logoutButton.className = 'logout-button';
+		logoutButton.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+
 		// Create or find the auth container
 		let authContainer = document.getElementById('auth-container');
 		if (!authContainer) {
@@ -586,10 +592,108 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		}
 
-		// Add the user email display to the container
+		// Add the user email display and logout button to the container
+		authContainer.innerHTML = ''; // Clear existing content
 		authContainer.appendChild(userEmailDisplay);
+		authContainer.appendChild(logoutButton);
+
+		// Add logout button click handler
+		logoutButton.addEventListener('click', handleLogout);
 
 		console.log(`Displaying user email: ${email}`);
+	}
+
+	// Function to handle logout
+	function handleLogout() {
+		// Show confirmation dialog
+		if (confirm('Are you sure you want to logout?')) {
+			// Send logout message to server
+			socket.send('OUTT');
+
+			// Clean up user interface
+			cleanupAfterLogout();
+		}
+	}
+
+	// Function to clean up after logout
+	function cleanupAfterLogout() {
+		// Start fading out UI elements
+		const editorElement = document.querySelector('.monaco-editor');
+		const outputContainer = document.querySelector('.output-container');
+		if (editorElement) editorElement.classList.add('fade');
+		if (outputContainer) outputContainer.classList.add('fade');
+
+		// Disable files menu with animation
+		const menuBtn = document.getElementById('menu-btn');
+		if (menuBtn) {
+			menuBtn.setAttribute('disabled', 'true');
+		}
+
+		// Close sidebar if open
+		const sidebar = document.getElementById('sidebar');
+		if (sidebar && sidebar.classList.contains('open')) {
+			closeSidebar();
+		}
+
+		// Clear file structure and current file
+		fileStructure = null;
+		currentFile = null;
+
+		// Hide current file display with animation
+		const currentFileDisplay = document.getElementById('current-file-display');
+		if (currentFileDisplay) {
+			currentFileDisplay.classList.add('hidden');
+		}
+
+		// Create the new auth button
+		const authBtn = document.createElement('button');
+		authBtn.id = 'auth-btn';
+		authBtn.className = 'auth-button';
+		authBtn.innerHTML = '<i class="fas fa-user"></i> Login / Register';
+
+		// Add click event listener to the new auth button
+		authBtn.addEventListener('click', () => {
+			const authModal = document.getElementById('auth-modal');
+			if (authModal) {
+				authModal.classList.remove('hidden');
+			}
+		});
+
+		// Get the current auth container
+		const currentAuthContainer = document.getElementById('auth-container');
+
+		// Start the transition sequence
+		setTimeout(() => {
+			// Fade out current auth container
+			if (currentAuthContainer) {
+				currentAuthContainer.style.opacity = '0';
+			}
+
+			// After current container fades out, replace it with the new button
+			setTimeout(() => {
+				if (currentAuthContainer && currentAuthContainer.parentNode) {
+					currentAuthContainer.parentNode.replaceChild(authBtn, currentAuthContainer);
+				}
+			}, 300);
+
+			// Clear editor content and restore to original state with fade transition
+			if (monacoEditor) {
+				setTimeout(() => {
+					monacoEditor.setValue(`# This is Codebox!\n# Write, Run & Save your Python code here\n# (c) Ophir Hoffman. All rights reserved.\n\nprint("Welcome to Codebox!")`);
+					editorElement.classList.remove('fade');
+					outputContainer.classList.remove('fade');
+					enableEditor();
+				}, 300);
+			}
+		}, 100);
+
+		// Clear output with fade
+		setTimeout(() => {
+			clearOutput();
+		}, 300);
+
+		// Reset file content change flag
+		fileContentChanged = false;
 	}
 
 	// Auth modal functionality

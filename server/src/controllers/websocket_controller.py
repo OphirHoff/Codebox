@@ -209,7 +209,8 @@ class ClientHandler:
         self.server: Server = server
         self.logger = Logger(self.client_ip, self.client_port)
         self.logger.log_connection_event("INFO", "CONN_EST")
-        self.email = None  # will be set after login
+        self.email = None  # will be set when user is logged in
+        self.disconnect_flag = False  # Will be set to True when user logs out
 
         self.container_name = f"n-{next(container_id_gen)}"
         self.container_running = None  # Will be set True when container is running
@@ -253,7 +254,14 @@ class ClientHandler:
         except websockets.exceptions.ConnectionClosed:
             self.logger.log_connection_event(Level.LEVEL_INFO, Event.CONNECTION_CLOSED)
         finally:
-            self.server.unregister_user(self.websocket)
+            self.unregister_user()
+
+    def unregister_user(self):
+        """
+        Unregister the user from the server.
+        """
+        self.email = None
+        self.server.unregister_user(self.websocket)
 
     def server_create_response(self, request, data, general_error=False):
         """
@@ -403,6 +411,9 @@ class ClientHandler:
                     res = get_user_file(self.email, file_path, db_conn)
                 to_send = self.server_create_response(protocol.CODE_DOWNLOAD_FILE, res)
 
+            elif code == protocol.CODE_LOGOUT:
+                self.unregister_user()
+                self.logger.log_connection_event(Level.LEVEL_INFO, Event.USER_LOGOUT)
         
         except Exception as e:
             print(f"Error: {e}")
