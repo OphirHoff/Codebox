@@ -22,7 +22,7 @@ async def shutdown_signal():
     """
     while True:
         # Use asyncio.to_thread to prevent blocking the event loop
-        if await asyncio.to_thread(keyboard.is_pressed, 'ctrl+q'):
+        if await asyncio.to_thread(keyboard.is_pressed, 'ctrl + shift + q'):
             break
         await asyncio.sleep(0.1)  # Yield control back to event loop 
 
@@ -34,7 +34,7 @@ async def main(db_server_ip: str):
     Args:
         db_server_ip: IP address of the database server
     """
-    print("Starting Server... (press 'q' to stop)\n")
+    print("Starting Server... (press 'ctrl + shift + q' to stop)\n")
 
     await http_server.start_http_server(HOST, HTTP_PORT, ssl_context)
 

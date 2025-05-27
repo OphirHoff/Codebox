@@ -273,6 +273,7 @@ class ClientHandler:
         except websockets.exceptions.ConnectionClosed:
             self.logger.log_connection_event(Level.LEVEL_INFO, Event.CONNECTION_CLOSED)
         finally:
+            await self.close_container()
             self.unregister_user()
 
     def unregister_user(self):
@@ -517,6 +518,13 @@ class ClientHandler:
                 pass
             await self.process.wait()
             return 3
+        except websockets.exceptions.ConnectionClosedOK:
+            try:
+                await self.close_container()
+                self.process.kill()
+            except:
+                pass
+            return
 
         return returncode
 
@@ -597,9 +605,16 @@ class ClientHandler:
             self.process.kill()
             await self.process.wait()
             return 3
+        except websockets.exceptions.ConnectionClosedOK:
+            try:
+                await self.close_container()
+                self.process.kill()
+            except:
+                pass
+            return
 
         return returncode
-    
+
     async def get_python_pid(self, container_name: str, code_path: str = 'script.py') -> int:
         """
         Use `docker exec` to retrieve the PID of the Python process inside the running container.
@@ -690,11 +705,17 @@ class ClientHandler:
         and forwards it to the container's stdin via process file descriptor.
         Ensures proper newline termination for input processing.
         """
+        # try:
+            
         # Inform client that input is required
         await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
 
         # Get input entered by user
         input = await self.handle_request(await self.recv())
+
+        # # Handle client disconnection during input phase
+        # except websockets.exceptions.ConnectionClosed:
+        #     return
 
         # Command to write to process's stdin in the container
         command = [
@@ -719,6 +740,17 @@ class ClientHandler:
 
     def is_process_running(self):
         return self.process.returncode is None
+    
+    async def close_container(self):
+        # Command to 'kill' active container
+        command = ["docker", "kill", self.container_name]
+
+        # Run command
+        await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.DEVNULL,  # Avoid stdout/stderr printed to console
+            stderr=asyncio.subprocess.DEVNULL
+        )
 
 
 async def register_user(email: str, password: str, db_conn: DatabaseSocketClient) -> bool:
