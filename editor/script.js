@@ -99,8 +99,21 @@ document.addEventListener('DOMContentLoaded', function () {
 	function showError() {
 		if (errorMessage) {
 			console.warn('Displaying error message.');
-			errorMessage.classList.remove('hidden'); // Show error message
-			errorMessage.style.display = 'block'; // Ensure it's visible
+			errorMessage.style.display = 'block'; // First make it visible but transparent
+
+			// Show the overlay first
+			const errorOverlay = document.getElementById('error-overlay');
+			if (errorOverlay) {
+				errorOverlay.style.display = 'block';
+				// Force a reflow to ensure the transition works
+				errorOverlay.offsetHeight;
+				errorOverlay.classList.add('visible');
+			}
+
+			// Small delay before showing the error message for a nice sequence
+			setTimeout(() => {
+				errorMessage.classList.add('visible');
+			}, 100);
 		} else {
 			console.warn('Error message element not found.');
 		}
@@ -116,7 +129,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Try Again button click event
 	tryAgainButton.addEventListener('click', () => {
-		window.location.reload(); // Refresh the page
+		// First hide the error message with transition
+		if (errorMessage) {
+			errorMessage.classList.remove('visible');
+		}
+
+		// Then hide the overlay
+		const errorOverlay = document.getElementById('error-overlay');
+		if (errorOverlay) {
+			errorOverlay.classList.remove('visible');
+		}
+
+		// Wait for transitions to complete before reloading
+		setTimeout(() => {
+			window.location.reload();
+		}, 300);
 	});
 
 	// Handle WebSocket messages (server responses)

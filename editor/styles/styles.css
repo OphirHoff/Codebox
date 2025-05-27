@@ -75,15 +75,22 @@ body {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(0.95);
     background-color: #ffcccc;
     padding: 20px;
     border: 1px solid #ff0000;
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 1001;
-    /* Ensure it's above other elements */
+    z-index: 1002;
+    /* Ensure it's above the overlay */
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+#error-message.visible {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
 }
 
 #error-message p {
@@ -101,11 +108,15 @@ body {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #try-again-button:hover {
     background-color: #cc0000;
+}
+
+#try-again-button:active {
+    transform: scale(0.95);
 }
 
 .hidden {
@@ -1321,4 +1332,24 @@ textarea#gravity-code:disabled {
 /* Output container transition */
 .output-container.fade {
     opacity: 0.3;
+}
+
+/* Error overlay styles */
+.error-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    z-index: 1001;
+    backdrop-filter: blur(0px);
+    transition: background-color 0.3s ease-out, backdrop-filter 0.3s ease-out;
+}
+
+.error-overlay.visible {
+    display: block;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
 }
