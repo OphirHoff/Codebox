@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}, 1300);
 
 	// WebSocket connection
-	const socket = new WebSocket('wss://192.168.0.136:8765'); // Replace with your WebSocket server URL
+	const socket = new WebSocket('wss://localhost:8765'); // Replace with your WebSocket server URL
 
 	// Handle WebSocket connection open
 	socket.addEventListener('open', () => {
@@ -734,12 +734,36 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 
+	// Password validation function
+	function validatePassword(password) {
+		// Check minimum length
+		if (password.length < 8) {
+			return { isValid: false, message: 'Password must be at least 8 characters long' };
+		}
+
+		// Check for uppercase letters
+		if (!/[A-Z]/.test(password)) {
+			return { isValid: false, message: 'Password must contain at least one uppercase letter' };
+		}
+
+		// Check for lowercase letters
+		if (!/[a-z]/.test(password)) {
+			return { isValid: false, message: 'Password must contain at least one lowercase letter' };
+		}
+
+		// Check for numbers
+		if (!/[0-9]/.test(password)) {
+			return { isValid: false, message: 'Password must contain at least one number' };
+		}
+
+		return { isValid: true, message: 'Password is valid' };
+	}
+
 	// Event listener for the Register button
 	authForm.addEventListener('submit', (e) => {
 		e.preventDefault(); // Prevent form submission
 
 		const email = emailInput.value;
-
 		const password = passwordInput.value;
 
 		// Validate inputs
@@ -752,6 +776,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		const isRegister = e.submitter?.classList.contains('register-btn');
 
 		if (isRegister) {
+			// Validate password for registration
+			const passwordValidation = validatePassword(password);
+			if (!passwordValidation.isValid) {
+				alert(passwordValidation.message);
+				return;
+			}
+
 			// Create the registration message in the required format
 			const registrationMessage = `REGI~${email}~${password}`;
 
@@ -770,7 +801,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			// Send to server through the existing WebSocket
 			if (socket && socket.readyState === WebSocket.OPEN) {
 				socket.send(loginMessage);
-
 				console.log('Login data sent:', loginMessage);
 				authModal.classList.add('hidden');
 			} else {
