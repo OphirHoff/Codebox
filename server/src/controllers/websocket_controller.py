@@ -432,6 +432,7 @@ class ClientHandler:
                 to_send = self.server_create_response(protocol.CODE_DOWNLOAD_FILE, res)
 
             elif code == protocol.CODE_LOGOUT:
+                await self.close_container()
                 self.unregister_user()
                 self.logger.log_connection_event(Level.LEVEL_INFO, Event.USER_LOGOUT)
         
