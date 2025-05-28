@@ -308,8 +308,8 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_LOGIN_FAILED}"
         
         elif request == protocol.CODE_STORAGE_ADD:
-            if data:
-                to_send = protocol.CODE_STORAGE_UPDATED
+            if data[0]:
+                to_send = f"{protocol.CODE_STORAGE_UPDATED}~{data[1]}"
             else:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_STORAGE_CREATE}"
 
@@ -327,8 +327,8 @@ class ClientHandler:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_NOT_FOUND}"
 
         elif request == protocol.CODE_DELETE_FILE:
-            if data:
-                to_send = protocol.CODE_FILE_DELETED
+            if data[0]:
+                to_send = f"{protocol.CODE_FILE_DELETED}~{data[1]}"
             else:
                 to_send = f"{protocol.CODE_ERROR}~{protocol.ERROR_FILE_DELETE}"
 
@@ -414,16 +414,15 @@ class ClientHandler:
                 return base64_decode(data[0])
 
             elif code == protocol.CODE_STORAGE_ADD:
-                data: dict = json.loads(data[0])
                 async with await self.server.get_db_conn() as db_conn:
-                    res = await user_storage_add(self.email, data, db_conn)
-                to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, res)
+                    res = await user_storage_add(self.email, json.loads(data[0]), db_conn)
+                to_send = self.server_create_response(protocol.CODE_STORAGE_ADD, (res, data[0]))
             
             elif code == protocol.CODE_DELETE_FILE:
                 file_path = data[0]
                 async with await self.server.get_db_conn() as db_conn:
                     res = await user_file_delete(self.email, file_path, db_conn)
-                to_send = self.server_create_response(protocol.CODE_DELETE_FILE, res)
+                to_send = self.server_create_response(protocol.CODE_DELETE_FILE, (res, file_path))
 
             elif code == protocol.CODE_DOWNLOAD_FILE:
                 file_path = data[0]

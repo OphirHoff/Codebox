@@ -179,6 +179,10 @@ document.addEventListener('DOMContentLoaded', function () {
 			clearEmailPw();
 		}
 		else if (response_code == 'CRER') {
+			console.log(data[0]);
+			// Add the new file to the file structure
+			addToFileStructure(JSON.parse(data[0]));
+			populateFileTree();
 			showNotification("Storage updated", 'success');
 		}
 		else if (response_code == 'FILC') {
@@ -195,6 +199,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			enableSaveButton();
 		}
 		else if (response_code == 'DELR') {
+			// Remove the file from the file structure
+			removeFileFromStructure(data[0]);
+
+			// Refresh the file tree
+			populateFileTree();
 			showNotification("File was deleted successfully!", 'success');
 		}
 		else if (response_code == 'DNLR') {
@@ -1638,9 +1647,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		const filePath = [...currentPath, name].join('/');
 
 		// Add file to the appropriate location in the file structure
-		addToFileStructure(newFile);
+		// addToFileStructure(newFile);
 
-		console.log(`New file created: ${name} at path: ${filePath}`);
+		// console.log(`New file created: ${name} at path: ${filePath}`);
 
 		// Send the file creation info to the server
 		sendFileCreationToServer('file', name, filePath);
@@ -1707,6 +1716,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			// If folder not found, add to root as fallback
 			fileStructure.push(newItem);
 		}
+
+		console.log(`New file created`);
 	}
 
 	// Function to send file/folder creation info to the server
@@ -1895,11 +1906,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				fileContentChanged = false;
 			}
 
-			// Remove the file from the file structure
-			removeFileFromStructure(filePath);
-
-			// Refresh the file tree
-			populateFileTree();
 		} else {
 			console.error('WebSocket not connected');
 			showNotification('Unable to delete file: Server connection not available', 'error');
