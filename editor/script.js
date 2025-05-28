@@ -146,9 +146,20 @@ document.addEventListener('DOMContentLoaded', function () {
 		}, 300);
 	});
 
+	// Function to cleanup file not found handlers
+	function cleanupFileNotFoundHandlers() {
+		// Remove any file not found error handlers
+		const errorHandlers = socket._listeners?.message?.filter(listener =>
+			listener.toString().includes('ERRR~201')
+		) || [];
+
+		errorHandlers.forEach(handler => {
+			socket.removeEventListener('message', handler);
+		});
+	}
+
 	// Handle WebSocket messages (server responses)
 	socket.addEventListener('message', (event) => {
-
 		msg = event.data;
 		console.log(`Received: ${msg}`);
 
@@ -175,6 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			monacoEditor.setValue(fileContent);
 			enableEditor();
 			fileContentChanged = false;
+
+			// Clean up error handlers since we successfully loaded the file
+			cleanupFileNotFoundHandlers();
 		}
 		else if (response_code == 'SAVR') {
 			showNotification("File was saved successfully!", 'success');
@@ -1177,28 +1191,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// Function to load file content into editor
 	function loadFileContent(fileName, filePath) {
-		// Request file content from server
-		const contentRequest = `GETF~${filePath}`;
+		// Store the current file info
+		currentFile = { name: fileName, path: filePath };
 
-		if (socket && socket.readyState === WebSocket.OPEN) {
-			socket.send(contentRequest);
-			console.log(`Requested content for file: ${filePath}`);
+		// Update the file display before loading content
+		updateCurrentFileDisplay(fileName, filePath);
 
-			// Show loading indicator in editor			
-			monacoEditor.setValue(`# Loading ${fileName}...`);
+		// Clean up any existing error handlers
+		cleanupFileNotFoundHandlers();
 
-			disableEditor();
+		// Disable editor while loading
+		disableEditor();
 
-			// Update file display with the current file name
-			updateCurrentFileDisplay(fileName, filePath);
+		// Send request to server to get file content
+		const toSend = `GETF~${filePath}`;
+		socket.send(toSend);
 
-			// Close "Files" sidebar
-			closeSidebar();
+		// Add error handling for file not found
+		const errorHandler = (event) => {
+			const msg = event.data;
+			if (msg.startsWith('ERRR~201')) { // File not found error code
+				// Reset editor state
+				monacoEditor.setValue('');
+				enableEditor();
 
-		} else {
-			console.error('WebSocket not connected');
-			alert('Unable to load file: Server connection not available');
-		}
+				// Clear current file info
+				currentFile = null;
+
+				// Hide the current file display
+				const currentFileDisplay = document.getElementById('current-file-display');
+				currentFileDisplay.classList.add('hidden');
+
+				// Remove the file selection highlight
+				const selectedFile = document.querySelector('.file-item.active');
+				if (selectedFile) {
+					selectedFile.classList.remove('active');
+				}
+
+				// Show notification
+				showNotification('File not found. The editor has been reset.', 'error');
+
+				// Remove this one-time error handler
+				socket.removeEventListener('message', errorHandler);
+			}
+		};
+
+		// Add the error handler
+		socket.addEventListener('message', errorHandler);
 	}
 
 	// Function to show and update the current file display
