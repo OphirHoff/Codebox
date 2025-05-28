@@ -190,7 +190,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			monacoEditor.setValue(fileContent);
 			enableEditor();
 			fileContentChanged = false;
-
+			// Close the sidebar after file is loaded
+			closeSidebar();
 			// Clean up error handlers since we successfully loaded the file
 			cleanupFileNotFoundHandlers();
 		}
@@ -1236,9 +1237,6 @@ document.addEventListener('DOMContentLoaded', function () {
 				if (selectedFile) {
 					selectedFile.classList.remove('active');
 				}
-
-				// Show notification
-				showNotification('File not found. The editor has been reset.', 'error');
 
 				// Remove this one-time error handler
 				socket.removeEventListener('message', errorHandler);
