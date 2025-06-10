@@ -668,35 +668,39 @@ class ClientHandler:
         
         await self.process.wait()
         self.container_running = False
-    
-    async def monitor_input(self):
+
+    async def is_proc_asleep(self):
         """
-        Monitors the running container process for input blocking state.
-        
         Continuously polls the process state using `ps` command to detect when
         the process enters sleep state ('S'), indicating it's waiting for stdin.
-        Triggers input streaming when blocking is detected.
-        
-        Runs until container execution completes.
         """
-
         # Command to run in shell
         command = f"docker exec {self.container_name} ps -o state= -p {self.pid}"
 
-        while self.container_running:
             
-            # Run command
-            process = await asyncio.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+        # Run command
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
 
-            # Read command execution output
-            res = await process.stdout.read()
-            if res.decode().strip() == 'S':
+        # Read command execution output
+        res = await process.stdout.read()
+        return res.decode().strip() == 'S'
+
+    async def monitor_input(self):
+        """
+        Monitors the running container process for input blocking state
+        and Triggers input streaming when blocking is detected.
+
+        Runs until container execution completes.
+        """
+
+        while self.container_running:
+            if await self.is_proc_asleep():
                 await self.stream_input()
-            
+
     async def stream_input(self):
         """
         Handles user input streaming to the blocked container process.
@@ -705,17 +709,20 @@ class ClientHandler:
         and forwards it to the container's stdin via process file descriptor.
         Ensures proper newline termination for input processing.
         """
-        # try:
-            
-        # Inform client that input is required
-        await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
 
-        # Get input entered by user
-        input = await self.handle_request(await self.recv())
+        while True:
+            try:
+                # Inform client that input is required
+                await self.send(self.server_create_response(protocol.CODE_BLOCKED_INPUT, None))
 
-        # # Handle client disconnection during input phase
-        # except websockets.exceptions.ConnectionClosed:
-        #     return
+                # Get input entered by user
+                input = await self.handle_request(await asyncio.wait_for(self.recv(), timeout=1))
+                if input:
+                    break
+            except asyncio.TimeoutError:
+                res = await self.is_proc_asleep()
+                if not res:
+                    return
 
         # Command to write to process's stdin in the container
         command = [
